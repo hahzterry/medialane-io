@@ -130,7 +130,7 @@ function MembershipPanel({
 export function AssetPageMembership() {
   const {
     contract, tokenId, pathname, router, shouldReduce,
-    hasWallet, walletAddress, listingRequiresEmailVerification,
+    hasWallet, walletAddress,
     collection, token, mutateListings, history, collectionTokens,
     commentTotal, remixCount,
     activeListings, activeBids, cheapest, cheapestUsd, lastSaleRaw,
@@ -214,8 +214,6 @@ export function AssetPageMembership() {
               activeBids={activeBids}
               walletAddress={walletAddress}
               floorPriceRaw={collection?.floorPrice}
-              listingRequiresEmailVerification={listingRequiresEmailVerification}
-              settingsHref="/verify"
               lastSaleRaw={lastSaleRaw}
               renderAuthAction={() => (
                 <div className="btn-border-animated p-[1px] rounded-2xl">

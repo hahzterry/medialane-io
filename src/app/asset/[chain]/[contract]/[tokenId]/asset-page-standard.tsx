@@ -38,7 +38,7 @@ import { AssetUnavailable } from "./asset-unavailable";
 export function AssetPageStandard() {
   const {
     contract, tokenId, router, shouldReduce,
-    hasWallet, walletAddress, listingRequiresEmailVerification,
+    hasWallet, walletAddress,
     collection, token, isLoading, isIndexing, mutateListings, history, collectionTokens,
     commentTotal, remixCount,
     activeListings, activeBids, cheapest, cheapestUsd, lastSaleRaw,
@@ -206,8 +206,6 @@ export function AssetPageStandard() {
               showDealOption={remixPolicy.showDealOption}
               floorPriceRaw={collection?.floorPrice}
               lastSaleRaw={lastSaleRaw}
-              listingRequiresEmailVerification={listingRequiresEmailVerification}
-              settingsHref="/verify"
               renderAuthAction={() => (
                 <SignedOutAssetActions chain={token.chain} contract={contract} tokenId={tokenId} />
               )}

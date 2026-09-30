@@ -10,7 +10,6 @@ import { useTokenRemixes } from "@/hooks/use-remix-offers";
 import { useTokenListings } from "@/hooks/use-orders";
 import { useComments } from "@/hooks/use-comments";
 import { useWalletNativeSession } from "@/hooks/use-wallet-native-session";
-import { useEmailVerificationRequired } from "@/hooks/use-email-verification-required";
 import { useAcceptOffer } from "@/hooks/use-accept-offer";
 import { useAssetMarketState } from "@/hooks/use-asset-market-state";
 import { ipfsToHttp, resolveTokenImage } from "@/lib/utils";
@@ -32,7 +31,6 @@ export function useAssetPage({ tokenStandard, namePrefix }: UseAssetPageOptions)
   const shouldReduce = useReducedMotion();
 
   const { hasWallet, address: walletAddress } = useWalletNativeSession();
-  const listingRequiresEmailVerification = useEmailVerificationRequired();
 
   const { collection } = useCollection(contract);
   const { token, isLoading, isIndexing } = useToken(contract, tokenId);
@@ -86,7 +84,7 @@ export function useAssetPage({ tokenStandard, namePrefix }: UseAssetPageOptions)
 
   return {
     contract, tokenId, pathname, router, shouldReduce,
-    hasWallet, walletAddress, listingRequiresEmailVerification,
+    hasWallet, walletAddress,
     collection, token, isLoading, isIndexing,
     listings, mutateListings, history: history as ApiActivity[], collectionTokens,
     commentTotal, remixCount,
