@@ -23,7 +23,7 @@ interface EmailVerifyDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   email: string;
-  onVerified: (emailVerificationToken: string) => Promise<void> | void;
+  onVerified: () => Promise<void> | void;
   skipInitialSend?: boolean;
 }
 
@@ -72,8 +72,8 @@ export function EmailVerifyDialog({ open, onOpenChange, email, onVerified, skipI
     setStep("verifying");
     setError(null);
     try {
-      const data = await getMedialaneClient().api.verifyEmailCode(email, code);
-      await onVerified(data.token);
+      await getMedialaneClient().api.verifyEmailCode(email, code);
+      await onVerified();
       setStep("success");
       setTimeout(() => onOpenChange(false), 1200);
     } catch (err) {

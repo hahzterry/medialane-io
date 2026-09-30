@@ -102,7 +102,6 @@ export function OnboardingFlow({ start = "email", onDone, autoStartWallet = true
       const { siwsToken } = await mediaWallet.completeDeployment((s) => setStep(s as OnboardingStep));
       await getMedialaneClient().api.upsertMyWallet(siwsToken, {
         walletType: "MEDIAWALLET",
-        appSource: "MEDIALANE_IO",
         chain: "STARKNET",
       });
       fireConfetti();

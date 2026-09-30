@@ -193,10 +193,7 @@ export default function SettingsContent() {
     }
   }
 
-  async function handleEmailVerified(emailVerificationToken: string) {
-    const token = getValidToken() ?? (await signIn());
-    if (!token) throw new Error("Not authenticated");
-    await getMedialaneClient().api.upsertMyWallet(token, { emailVerificationToken });
+  function handleEmailVerified() {
     setEmailStatus((s) => (s ? { ...s, verified: true } : s));
   }
 
