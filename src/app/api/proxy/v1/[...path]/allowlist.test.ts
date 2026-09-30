@@ -121,3 +121,7 @@ test("POST /v1/users/me/generate-wallet is allowed", () => {
 test("POST /v1/users/me/email is allowed", () => {
   expect(isPathAllowed("POST", "users/me/email")).toBe(true);
 });
+
+test("allows claiming a waiting wallet", () => {
+  expect(isPathAllowed("POST", "users/me/claim-wallet")).toBe(true);
+});

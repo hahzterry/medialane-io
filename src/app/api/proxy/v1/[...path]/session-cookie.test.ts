@@ -87,3 +87,7 @@ test("nothing else sets it", () => {
   expect(shouldSetSessionCookie("auth/siws/verify", "GET")).toBe(false);
   expect(shouldSetSessionCookie("tokens", "POST")).toBe(false);
 });
+
+test("injects the session into a wallet claim", () => {
+  expect(shouldInjectSessionCookie("users/me/claim-wallet", "POST")).toBe(true);
+});

@@ -1,6 +1,5 @@
 "use client";
 
-import { UserFacingError } from "@medialane/ui";
 import { describeError } from "@medialane/ui";
 import { useEffect, useRef, useState } from "react";
 import { Mail, ShieldCheck, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
@@ -14,6 +13,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { getMedialaneClient } from "@/lib/medialane-client";
 
 type Step = "sending" | "code" | "verifying" | "success" | "error";
 
@@ -38,12 +38,7 @@ export function EmailVerifyDialog({ open, onOpenChange, email, onVerified, skipI
     setStep("sending");
     setError(null);
     try {
-      const res = await fetch("/api/proxy/v1/auth/email/request-code", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      if (!res.ok) throw new UserFacingError("Couldn't send the code. Please try again.");
+      await getMedialaneClient().api.requestEmailCode(email);
       setStep("code");
       setCooldown(RESEND_COOLDOWN_S);
       setTimeout(() => inputRef.current?.focus(), 50);
@@ -77,14 +72,8 @@ export function EmailVerifyDialog({ open, onOpenChange, email, onVerified, skipI
     setStep("verifying");
     setError(null);
     try {
-      const res = await fetch("/api/proxy/v1/auth/email/verify-code", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, code }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new UserFacingError((data as { error?: string }).error ?? "Incorrect code. Please try again.");
-      await onVerified((data as { token: string }).token);
+      const data = await getMedialaneClient().api.verifyEmailCode(email, code);
+      await onVerified(data.token);
       setStep("success");
       setTimeout(() => onOpenChange(false), 1200);
     } catch (err) {
