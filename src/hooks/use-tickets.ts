@@ -1,60 +1,11 @@
 "use client";
 
-import useSWR from "swr";
-import { Contract, type Abi } from "starknet";
-import { IPTicketCollectionABI } from "@medialane/sdk/starknet";
-import { starknetProvider } from "@/lib/starknet";
+import * as ui from "@medialane/ui";
 import { getMedialaneClient } from "@/lib/medialane-client";
-import { useCollectionsByOwner } from "@/hooks/use-collections";
 
-export function useMyTicketCollections(ownerAddress: string | null) {
-  const { collections, isLoading, error, mutate } = useCollectionsByOwner(ownerAddress);
-  return {
-    collections: collections.filter((c) => c.service === "ip-tickets"),
-    isLoading,
-    error,
-    mutate,
-  };
-}
+export type { TierOnchain as TicketOnchain, TierListItem as TicketListItem } from "@medialane/ui";
 
-export interface TicketOnchain {
-  maxSupply: bigint;
-  minted: bigint;
-  startTime: number | null;
-  endTime: number | null;
-  royaltyBps: number;
-}
-
-async function readTicket(contract: string, tokenId: string): Promise<TicketOnchain> {
-  const data = await getMedialaneClient().api.getTicket(contract, tokenId);
-  return {
-    maxSupply: BigInt(data.maxSupply),
-    minted: BigInt(data.minted),
-    startTime: data.startTime,
-    endTime: data.endTime,
-    royaltyBps: data.royaltyBps,
-  };
-}
-
-export interface TicketListItem extends TicketOnchain {
-  id: string;
-}
-
-async function readTicketCount(contract: string): Promise<number> {
-  const col = new Contract({ abi: IPTicketCollectionABI as unknown as Abi, address: contract, providerOrAccount: starknetProvider });
-  return Number(await col.call("ticket_count", []));
-}
-
-export async function predictNextTicketId(contract: string): Promise<number> {
-  return (await readTicketCount(contract)) + 1;
-}
-
-export function useTicketOnchain(contract: string | null, tokenId: string | null) {
-  const { data, error, isLoading } = useSWR<TicketOnchain>(
-    contract && tokenId ? `ticket-onchain-${contract}-${tokenId}` : null,
-    () => readTicket(contract!, tokenId!),
-    { revalidateOnFocus: false, shouldRetryOnError: false, dedupingInterval: 30_000 }
-  );
-
-  return { ticket: data ?? null, isLoading, error };
-}
+export const predictNextTicketId = (contract: string) => ui.predictNextTicketId(getMedialaneClient().api, contract);
+export const useMyTicketCollections = (owner: string | null) => ui.useMyTicketCollections(getMedialaneClient, owner);
+export const useTicketOnchain = (contract: string | null, tokenId: string | null) =>
+  ui.useTicketOnchain(getMedialaneClient, contract, tokenId);

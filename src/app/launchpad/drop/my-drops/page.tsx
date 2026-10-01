@@ -8,18 +8,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { FadeIn, Stagger, StaggerItem } from "@/components/ui/motion-primitives";
 import { useWalletNativeSession } from "@/hooks/use-wallet-native-session";
 import { ipfsToHttp } from "@/lib/utils";
-import useSWR from "swr";
 import type { ApiCollection } from "@medialane/sdk";
-import { getMedialaneClient } from "@/lib/medialane-client";
-
-function useMyDrops(ownerAddress: string | null) {
-  return useSWR<ApiCollection[]>(
-    ownerAddress ? `my-drops-${ownerAddress}` : null,
-    async () =>
-      (await getMedialaneClient().api.listCollections({ service: "drop-collection", owner: ownerAddress!, limit: 50 })).data ?? [],
-    { revalidateOnFocus: false }
-  );
-}
+import { useMyDrops } from "@/hooks/use-drops";
 
 function MyDropCard({ collection }: { collection: ApiCollection }) {
   const imageUrl = collection.image ? ipfsToHttp(collection.image) : null;
@@ -57,7 +47,7 @@ function MyDropCard({ collection }: { collection: ApiCollection }) {
 
 export default function MyDropsPage() {
   const { hasWallet, address: walletAddress } = useWalletNativeSession();
-  const { data: collections, isLoading } = useMyDrops(walletAddress ?? null);
+  const { drops: collections, isLoading } = useMyDrops(walletAddress ?? null);
 
   if (!hasWallet) {
     return (

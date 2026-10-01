@@ -8,18 +8,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { FadeIn, Stagger, StaggerItem } from "@/components/ui/motion-primitives";
 import { useWalletNativeSession } from "@/hooks/use-wallet-native-session";
 import { ipfsToHttp } from "@/lib/utils";
-import useSWR from "swr";
 import type { ApiCollection } from "@medialane/sdk";
-import { getMedialaneClient } from "@/lib/medialane-client";
-
-function useMyEvents(ownerAddress: string | null) {
-  return useSWR<ApiCollection[]>(
-    ownerAddress ? `my-events-${ownerAddress}` : null,
-    async () =>
-      (await getMedialaneClient().api.listCollections({ service: "pop-protocol", owner: ownerAddress!, limit: 50 })).data ?? [],
-    { revalidateOnFocus: false }
-  );
-}
+import { useMyEvents } from "@/hooks/use-pop";
 
 function MyEventCard({ collection }: { collection: ApiCollection }) {
   const imageUrl = collection.image ? ipfsToHttp(collection.image) : null;
@@ -59,7 +49,7 @@ function MyEventCard({ collection }: { collection: ApiCollection }) {
 
 export default function MyEventsPage() {
   const { hasWallet, address: walletAddress } = useWalletNativeSession();
-  const { data: collections, isLoading } = useMyEvents(walletAddress ?? null);
+  const { events: collections, isLoading } = useMyEvents(walletAddress ?? null);
 
   if (!hasWallet) {
     return (
