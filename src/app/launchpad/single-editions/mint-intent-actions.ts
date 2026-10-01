@@ -1,6 +1,7 @@
 
 import { UserFacingError } from "@medialane/ui";
-import { MEDIALANE_API_KEY, MEDIALANE_BACKEND_URL } from "@/lib/constants";
+import { MedialaneApiError } from "@medialane/sdk";
+import { getMedialaneClient } from "@/lib/medialane-client";
 
 export type MintDebugSnapshot = {
   operation: "mint_erc721";
@@ -11,7 +12,6 @@ export type MintDebugSnapshot = {
   collectionContract?: string | null;
   collectionName?: string | null;
   tokenUri?: string | null;
-  backendUrl?: string;
   request?: Record<string, unknown>;
   responseStatus?: number;
   responseText?: string;
@@ -29,52 +29,32 @@ export type MintDebugSnapshot = {
 
 export type UpdateDebug = (patch: Partial<MintDebugSnapshot>) => MintDebugSnapshot;
 
+/** What a failed backend call looks like in the debug snapshot. */
+function failure(err: unknown): Partial<MintDebugSnapshot> {
+  if (err instanceof MedialaneApiError) {
+    return {
+      responseStatus: err.status,
+      responseText: (typeof err.details === "string" ? err.details : JSON.stringify(err.details ?? null)).slice(0, 2000),
+      responseJson: err.details,
+    };
+  }
+  return { error: err instanceof Error ? err.message : String(err) };
+}
+
 export async function createMintIntentWithDebug(
   body: { owner: string; collectionId: string; recipient: string; tokenUri: string; royaltyBps: number },
   updateDebug: UpdateDebug
 ) {
-  updateDebug({
-    step: "intent_request",
-    backendUrl: MEDIALANE_BACKEND_URL,
-    request: { ...body, tokenUri: body.tokenUri },
-  });
+  updateDebug({ step: "intent_request", request: { ...body } });
 
-  const res = await fetch(`${MEDIALANE_BACKEND_URL}/v1/intents/mint`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(MEDIALANE_API_KEY ? { "x-api-key": MEDIALANE_API_KEY } : {}),
-    },
-    body: JSON.stringify(body),
-  });
-
-  const responseText = await res.text();
-  let responseJson: unknown = null;
   try {
-    responseJson = responseText ? JSON.parse(responseText) : null;
-  } catch {
-    responseJson = null;
+    const response = await getMedialaneClient().api.createMintIntent(body);
+    updateDebug({ step: "intent_response", responseStatus: 200, responseJson: response });
+    return response as { data?: { id?: string; calls?: { contractAddress: string; entrypoint?: string; calldata?: unknown[] }[] } };
+  } catch (err) {
+    updateDebug({ step: "intent_failed", ...failure(err) });
+    throw err;
   }
-
-  updateDebug({
-    step: res.ok ? "intent_response" : "intent_failed",
-    responseStatus: res.status,
-    responseText: responseText.slice(0, 2000),
-    responseJson,
-  });
-
-  if (!res.ok) {
-    const serverError =
-      responseJson &&
-      typeof responseJson === "object" &&
-      "error" in responseJson &&
-      typeof responseJson.error === "string"
-        ? responseJson.error
-        : responseText || `Mint intent failed with HTTP ${res.status}`;
-    throw new Error(serverError);
-  }
-
-  return responseJson as { data?: { id?: string; calls?: { contractAddress: string; entrypoint?: string; calldata?: unknown[] }[] } };
 }
 
 export async function confirmMintIntentWithDebug(
@@ -85,42 +65,13 @@ export async function confirmMintIntentWithDebug(
   const normalizedHash = "0x" + txHash.replace(/^0x/, "").padStart(64, "0");
   updateDebug({ step: "tx_confirm_request", txHash: normalizedHash });
 
-  const res = await fetch(`${MEDIALANE_BACKEND_URL}/v1/intents/${id}/confirm`, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      ...(MEDIALANE_API_KEY ? { "x-api-key": MEDIALANE_API_KEY } : {}),
-    },
-    body: JSON.stringify({ txHash: normalizedHash }),
-  });
-
-  const responseText = await res.text();
-  let responseJson: unknown = null;
   try {
-    responseJson = responseText ? JSON.parse(responseText) : null;
-  } catch {
-    responseJson = null;
+    const response = await getMedialaneClient().api.confirmIntent(id, normalizedHash);
+    updateDebug({ step: "tx_confirm_sent", responseStatus: 200, responseJson: response, txHash: normalizedHash });
+  } catch (err) {
+    updateDebug({ step: "tx_confirm_failed", txHash: normalizedHash, ...failure(err) });
+    throw err;
   }
-
-  updateDebug({
-    step: res.ok ? "tx_confirm_sent" : "tx_confirm_failed",
-    responseStatus: res.status,
-    responseText: responseText.slice(0, 2000),
-    responseJson,
-    txHash: normalizedHash,
-  });
-
-  if (!res.ok) {
-    const serverError =
-      responseJson &&
-      typeof responseJson === "object" &&
-      "error" in responseJson &&
-      typeof responseJson.error === "string"
-        ? responseJson.error
-        : responseText || `Mint confirmation failed with HTTP ${res.status}`;
-    throw new Error(serverError);
-  }
-
   return normalizedHash;
 }
 
@@ -134,38 +85,13 @@ export async function pollMintIntentUntilTerminal(
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     if (attempt > 0) await new Promise<void>((resolve) => setTimeout(resolve, INTERVAL_MS));
 
-    const res = await fetch(`${MEDIALANE_BACKEND_URL}/v1/intents/${id}`, {
-      headers: {
-        ...(MEDIALANE_API_KEY ? { "x-api-key": MEDIALANE_API_KEY } : {}),
-      },
-    });
-
-    const responseText = await res.text();
-    let responseJson: unknown = null;
+    let intent: Record<string, unknown> | null;
     try {
-      responseJson = responseText ? JSON.parse(responseText) : null;
-    } catch {
-      responseJson = null;
+      intent = (await getMedialaneClient().api.getIntent(id)).data as unknown as Record<string, unknown>;
+    } catch (err) {
+      updateDebug({ step: "intent_poll_failed", ...failure(err) });
+      throw err;
     }
-
-    if (!res.ok) {
-      updateDebug({
-        step: "intent_poll_failed",
-        responseStatus: res.status,
-        responseText: responseText.slice(0, 2000),
-        responseJson,
-      });
-      throw new Error(responseText || `Mint verification poll failed with HTTP ${res.status}`);
-    }
-
-    const intent =
-      responseJson &&
-      typeof responseJson === "object" &&
-      "data" in responseJson &&
-      responseJson.data &&
-      typeof responseJson.data === "object"
-        ? (responseJson.data as Record<string, unknown>)
-        : null;
     const status = typeof intent?.status === "string" ? intent.status : undefined;
 
     updateDebug({

@@ -5,7 +5,7 @@ import useSWR from "swr";
 import { Contract, cairo, type Abi } from "starknet";
 import { IPClubCollectionABI } from "@medialane/sdk/starknet";
 import { starknetProvider } from "@/lib/starknet";
-import { apiFetch } from "@/lib/api-fetch";
+import { getMedialaneClient } from "@/lib/medialane-client";
 import { useCollectionsByOwner } from "@/hooks/use-collections";
 
 export function useMyClubCollections(ownerAddress: string | null) {
@@ -26,16 +26,8 @@ export interface MembershipOnchain {
   royaltyBps: number;
 }
 
-interface MembershipOnchainResponse {
-  maxSupply: string;
-  minted: string;
-  startTime: number | null;
-  endTime: number | null;
-  royaltyBps: number;
-}
-
 async function readMembership(contract: string, tokenId: string): Promise<MembershipOnchain> {
-  const { data } = await apiFetch<{ data: MembershipOnchainResponse }>(`/v1/club/${contract}/${tokenId}`);
+  const data = await getMedialaneClient().api.getClubMembership(contract, tokenId);
   return {
     maxSupply: BigInt(data.maxSupply),
     minted: BigInt(data.minted),
@@ -94,12 +86,7 @@ export function useIsMemberOf(
 
   const { data, error, isLoading } = useSWR<boolean>(
     key,
-    async () => {
-      const { data } = await apiFetch<{ data: { isMember: boolean } }>(
-        `/v1/club/${contract}/${tokenId}/member/${wallet}`
-      );
-      return data.isMember;
-    },
+    () => getMedialaneClient().api.isClubMember(contract!, tokenId!, wallet!),
     { revalidateOnFocus: false, shouldRetryOnError: false }
   );
 

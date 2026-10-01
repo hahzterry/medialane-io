@@ -1,14 +1,10 @@
 "use client";
 
 import useSWR from "swr";
-import { apiFetch } from "@/lib/api-fetch";
+import type { ApiIpNftTokenData } from "@medialane/sdk";
+import { getMedialaneClient } from "@/lib/medialane-client";
 
-export interface FullTokenData {
-  owner: string;
-  metadataUri: string;
-  originalCreator: string;
-  registeredAt: number;
-}
+export type { ApiIpNftTokenData as FullTokenData } from "@medialane/sdk";
 
 interface UseFullTokenDataArgs {
   ipNftAddress: string | undefined;
@@ -18,14 +14,9 @@ interface UseFullTokenDataArgs {
 export function useFullTokenData({ ipNftAddress, tokenId }: UseFullTokenDataArgs) {
   const enabled = Boolean(ipNftAddress && tokenId !== undefined);
 
-  const { data, error, isLoading } = useSWR<FullTokenData | null>(
+  const { data, error, isLoading } = useSWR<ApiIpNftTokenData | null>(
     enabled ? ["full-token-data", ipNftAddress, tokenId!.toString()] : null,
-    async () => {
-      const { data } = await apiFetch<{ data: FullTokenData | null }>(
-        `/v1/ipnft/${ipNftAddress}/${tokenId!.toString()}`
-      );
-      return data;
-    },
+    () => getMedialaneClient().api.getIpNftTokenData(ipNftAddress!, tokenId!.toString()),
     { revalidateOnFocus: false, refreshInterval: 0 }
   );
 

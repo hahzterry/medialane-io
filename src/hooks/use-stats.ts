@@ -1,21 +1,12 @@
 import useSWR from "swr";
-import { apiFetch } from "@/lib/api-fetch";
-
-interface PlatformStats {
-  collections: number;
-  tokens: number;
-  sales: number;
-}
+import type { ApiPlatformStats } from "@medialane/sdk";
+import { getMedialaneClient } from "@/lib/medialane-client";
 
 export function usePlatformStats() {
-  const { data, isLoading } = useSWR<PlatformStats>(
+  const { data, isLoading } = useSWR<ApiPlatformStats>(
     "platform-stats",
-    async () => {
-      const json = await apiFetch<{ data: PlatformStats }>("/v1/stats");
-      return json.data;
-    },
+    () => getMedialaneClient().api.getPlatformStats(),
     { revalidateOnFocus: false, dedupingInterval: 60_000 }
   );
-
   return { stats: data ?? null, isLoading };
 }

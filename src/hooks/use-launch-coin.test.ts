@@ -16,6 +16,7 @@ function fakeClient(overrides: Record<string, unknown> = {}) {
     api: {
       createCoinIntent: async () => ({ data: { requiresSignature: false, calls: [{ contractAddress: "0x1", entrypoint: "e", calldata: [] }] } }),
       launchCoinIntent: async () => ({ data: { requiresSignature: false, calls: [{ contractAddress: "0x1", entrypoint: "e", calldata: [] }] } }),
+      syncCoin: async () => ({ data: {} }),
       ...overrides,
     },
   };

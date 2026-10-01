@@ -27,7 +27,6 @@ import { RewardEarned } from "@/lib/reward-earned";
 import { CreateDropAside } from "@/components/claim/create-drop-aside";
 import { LaunchpadSignedOutState } from "@/components/launchpad/launchpad-signed-out-state";
 
-const API_BASE = "/api/proxy";
 
 const PAYMENT_TOKENS = getListableTokens().map((t) => ({ symbol: t.symbol, address: t.address }));
 

@@ -4,7 +4,7 @@ import useSWR from "swr";
 import { Contract, type Abi } from "starknet";
 import { IPTicketCollectionABI } from "@medialane/sdk/starknet";
 import { starknetProvider } from "@/lib/starknet";
-import { apiFetch } from "@/lib/api-fetch";
+import { getMedialaneClient } from "@/lib/medialane-client";
 import { useCollectionsByOwner } from "@/hooks/use-collections";
 
 export function useMyTicketCollections(ownerAddress: string | null) {
@@ -25,16 +25,8 @@ export interface TicketOnchain {
   royaltyBps: number;
 }
 
-interface TicketOnchainResponse {
-  maxSupply: string;
-  minted: string;
-  startTime: number | null;
-  endTime: number | null;
-  royaltyBps: number;
-}
-
 async function readTicket(contract: string, tokenId: string): Promise<TicketOnchain> {
-  const { data } = await apiFetch<{ data: TicketOnchainResponse }>(`/v1/tickets/${contract}/${tokenId}`);
+  const data = await getMedialaneClient().api.getTicket(contract, tokenId);
   return {
     maxSupply: BigInt(data.maxSupply),
     minted: BigInt(data.minted),

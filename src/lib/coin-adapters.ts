@@ -3,7 +3,7 @@
 import useSWR from "swr";
 import type { ApiCoin, ApiResponse } from "@medialane/sdk";
 import { coinServiceIds, type CoinFilter, type CoinSort, type CoinCollectionLike } from "@medialane/ui";
-import { MEDIALANE_BACKEND_URL } from "@/lib/constants";
+import { getMedialaneClient } from "@/lib/medialane-client";
 import { coinHref as buildCoinHref } from "@/lib/routes";
 import { useCoinPrice, usePriceMap } from "@/hooks/use-coin-price";
 
@@ -18,14 +18,9 @@ export const usePriceMapAdapter = usePriceMap;
 
 export function useCoinsAdapter({ filter, sort }: { filter: CoinFilter; sort: CoinSort }) {
   const service = filter === "all" ? "" : coinServiceIds(filter)[0] ?? "";
-  const params = new URLSearchParams({ limit: "24" });
-  if (service) params.set("service", service);
-  if (sort) params.set("sort", sort);
-  const url = `${MEDIALANE_BACKEND_URL}/v1/coins?${params.toString()}`;
-
   const { data, isLoading } = useSWR<ApiResponse<ApiCoin[]>>(
     `coins-${filter}-${sort}`,
-    () => fetch(url).then((r) => r.json()),
+    () => getMedialaneClient().api.getCoins({ limit: 24, service: service || undefined, sort: sort || undefined }),
     { revalidateOnFocus: false }
   );
 
@@ -33,10 +28,9 @@ export function useCoinsAdapter({ filter, sort }: { filter: CoinFilter; sort: Co
 }
 
 export function useCoin(address: string | null) {
-  const url = address ? `${MEDIALANE_BACKEND_URL}/v1/coins/${address}` : null;
   const { data, isLoading } = useSWR<{ data: ApiCoin }>(
-    url ? `coin-${address}` : null,
-    () => fetch(url!).then((r) => r.json()),
+    address ? `coin-${address}` : null,
+    () => getMedialaneClient().api.getCoin(address!),
     { revalidateOnFocus: false }
   );
   return { coin: data?.data ?? null, isLoading };

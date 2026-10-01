@@ -15,7 +15,6 @@ import { buildFeeCall } from "@medialane/sdk/starknet";
 import { feeConfig } from "@/lib/fee";
 import { useTokensByOwner } from "@/hooks/use-tokens";
 import { AssetPicker, AssetSearchPicker, LicenseTermsBuilder, EMPTY_SPONSORSHIP_TERMS, toLicenseMetadata, toDurationDays, type OwnedAsset, type SponsorshipTerms } from "@medialane/ui";
-import { apiFetch } from "@/lib/api-fetch";
 import { getTokenBySymbol, SUPPORTED_TOKENS } from "@medialane/sdk";
 import { ClaimRouteShell } from "@/components/claim/claim-route-shell";
 import { RewardEarned } from "@/lib/reward-earned";
@@ -137,9 +136,7 @@ export default function CreateSponsorshipOfferPage() {
   }));
 
   const searchAssets = async (query: string): Promise<OwnedAsset[]> => {
-    const res = await apiFetch<{ data: { tokens: { contractAddress: string; tokenId: string; name: string | null; image: string | null }[] } }>(
-      `/v1/search?q=${encodeURIComponent(query)}&limit=16`
-    );
+    const res = await client.api.search(query, 16);
     return res.data.tokens.map((t) => ({
       contractAddress: t.contractAddress,
       tokenId: t.tokenId,

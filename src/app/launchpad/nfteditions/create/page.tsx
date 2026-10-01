@@ -33,7 +33,6 @@ import {
   type NftEditionsCreateFormValues,
 } from "../nfteditions-create-schema";
 
-const API_BASE = "/api/proxy";
 import { invalidatePortfolioCache } from "@/lib/portfolio-cache";
 
 export default function CreateIP1155CollectionPage() {
@@ -132,18 +131,7 @@ export default function CreateIP1155CollectionPage() {
       const addr = deployedCollectionFromReceipt(result.receipt, "mip-erc1155");
 
       if (addr) {
-        try {
-          await fetch(`${API_BASE}/v1/collections/register`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contractAddress: addr,
-              startBlock: 0,
-              standard: "ERC1155",
-              source: "MEDIALANE_ERC1155",
-            }),
-          });
-        } catch {  }
+        await client.api.registerCollection(addr).catch(() => {});
       }
 
     if (walletAddress) invalidatePortfolioCache(walletAddress);

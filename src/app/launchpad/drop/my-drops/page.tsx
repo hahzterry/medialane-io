@@ -10,24 +10,13 @@ import { useWalletNativeSession } from "@/hooks/use-wallet-native-session";
 import { ipfsToHttp } from "@/lib/utils";
 import useSWR from "swr";
 import type { ApiCollection } from "@medialane/sdk";
-import { throwOnErrorResponse } from "@/lib/fetch-error";
-
-const API_BASE = "/api/proxy";
+import { getMedialaneClient } from "@/lib/medialane-client";
 
 function useMyDrops(ownerAddress: string | null) {
   return useSWR<ApiCollection[]>(
     ownerAddress ? `my-drops-${ownerAddress}` : null,
-    async () => {
-      const params = new URLSearchParams({
-        service: "drop-collection",
-        owner: ownerAddress!,
-        limit: "50",
-      });
-      const res = await fetch(`${API_BASE}/v1/collections?${params}`);
-      if (!res.ok) await throwOnErrorResponse(res, "Couldn't load your drops. Please try again.");
-      const json = await res.json();
-      return json.data ?? [];
-    },
+    async () =>
+      (await getMedialaneClient().api.listCollections({ service: "drop-collection", owner: ownerAddress!, limit: 50 })).data ?? [],
     { revalidateOnFocus: false }
   );
 }

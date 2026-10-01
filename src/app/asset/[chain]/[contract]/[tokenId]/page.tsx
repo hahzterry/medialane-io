@@ -16,9 +16,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { chain, contract, tokenId } = await params;
   const token = await fetchTokenMeta(contract, tokenId);
 
-  const name        = token?.metadata?.name ?? token?.name ?? `Token #${tokenId}`;
-  const description = truncateDescription(token?.metadata?.description ?? token?.description ?? "View this digital asset on Medialane.");
-  const rawImage    = token?.metadata?.image ?? token?.image;
+  const name        = token?.metadata?.name ?? `Token #${tokenId}`;
+  const description = truncateDescription(token?.metadata?.description ?? "View this digital asset on Medialane.");
+  const rawImage    = token?.metadata?.image;
   const imageUrl    = rawImage ? ipfsToHttpServer(rawImage) : undefined;
   const path        = `/asset/${chain}/${contract}/${tokenId}`;
 
@@ -37,9 +37,9 @@ export default async function AssetPage({ params }: Props) {
     fetchTokenMeta(contract, tokenId),
     fetchCollectionMeta(contract),
   ]);
-  const name = token?.metadata?.name ?? token?.name ?? `Token #${tokenId}`;
-  const description = token?.metadata?.description ?? token?.description ?? "View this digital asset on Medialane.";
-  const imageUrl = ipfsToHttpServer(token?.metadata?.image ?? token?.image ?? "");
+  const name = token?.metadata?.name ?? `Token #${tokenId}`;
+  const description = token?.metadata?.description ?? "View this digital asset on Medialane.";
+  const imageUrl = ipfsToHttpServer(token?.metadata?.image ?? "");
   const path = `/asset/${chain}/${contract}/${tokenId}`;
   const collectionName = collection?.name ?? "Collection";
   const collectionPath = `/collections/${chain}/${contract}`;

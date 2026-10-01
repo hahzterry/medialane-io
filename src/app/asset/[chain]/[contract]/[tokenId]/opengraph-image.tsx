@@ -14,9 +14,9 @@ export default async function Image({
   const { contract, tokenId } = await params;
   const token = await fetchTokenMeta(contract, tokenId);
 
-  const name = token?.metadata?.name ?? token?.name ?? `Token #${tokenId}`;
-  const description = token?.metadata?.description ?? token?.description ?? "";
-  const imageUrl = ipfsToHttpServer(token?.metadata?.image ?? token?.image ?? "");
+  const name = token?.metadata?.name ?? `Token #${tokenId}`;
+  const description = token?.metadata?.description ?? "";
+  const imageUrl = ipfsToHttpServer(token?.metadata?.image ?? "");
 
   return new ImageResponse(
     (

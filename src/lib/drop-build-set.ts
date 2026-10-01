@@ -4,6 +4,7 @@ import { UserFacingError } from "@medialane/ui";
 import { uploadImageToIpfs } from "@/lib/upload-image";
 import { buildAssetMetadata } from "@medialane/sdk";
 import { uploadDirectoryToIpfs } from "@medialane/ui";
+import { getMedialaneClient } from "@/lib/medialane-client";
 
 export interface SharedLicense {
   ipType: string;
@@ -76,6 +77,6 @@ export async function buildDropSet(
     },
   });
 
-  const { baseUri } = await uploadDirectoryToIpfs(files);
+  const { baseUri } = await uploadDirectoryToIpfs(getMedialaneClient().api, files);
   return { baseUri, count: items.length };
 }

@@ -1,22 +1,15 @@
 "use client";
 
 import useSWR from "swr";
-import { apiFetch } from "@/lib/api-fetch";
-import type { ApiCollection, ApiMeta } from "@medialane/sdk";
+import type { ApiCollection, ApiMeta, PopClaimStatus } from "@medialane/sdk";
+import { getMedialaneClient } from "@/lib/medialane-client";
 
-export interface PopClaimStatus {
-  isEligible: boolean;
-  hasClaimed: boolean;
-  tokenId: string | null;
-}
+export type { PopClaimStatus };
 
 export function usePopCollections() {
-  const { data, error, isLoading, mutate } = useSWR<{ data: ApiCollection[]; meta: ApiMeta }>(
+  const { data, error, isLoading, mutate } = useSWR<{ data: ApiCollection[]; meta?: ApiMeta }>(
     "pop-collections",
-    () =>
-      apiFetch<{ data: ApiCollection[]; meta: ApiMeta }>(
-        `/v1/collections?${new URLSearchParams({ service: "pop-protocol", hideEmpty: "false", limit: "50" })}`
-      ),
+    () => getMedialaneClient().api.listCollections({ service: "pop-protocol", hideEmpty: false, limit: 50 }),
     { revalidateOnFocus: false }
   );
 
@@ -31,15 +24,10 @@ export function usePopCollections() {
 
 export function usePopClaimStatus(collection: string | null, wallet: string | null) {
   const key = collection && wallet ? `pop-eligibility-${collection}-${wallet}` : null;
-
   const { data, error, isLoading, mutate } = useSWR<PopClaimStatus>(
     key,
-    async () => {
-      const json = await apiFetch<{ data: PopClaimStatus }>(`/v1/pop/eligibility/${collection}/${wallet}`);
-      return json.data;
-    },
+    () => getMedialaneClient().api.getPopEligibility(collection!, wallet!),
     { revalidateOnFocus: false, shouldRetryOnError: false }
   );
-
   return { claimStatus: data ?? null, isLoading, error, mutate };
 }

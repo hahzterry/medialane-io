@@ -16,7 +16,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useWalletNativeSession } from "@/hooks/use-wallet-native-session";
 import { useSiwsToken } from "@/hooks/use-siws-token";
-import { normalizeAddress } from "@medialane/sdk";
+import { MedialaneApiError } from "@medialane/sdk";
+import { getMedialaneClient } from "@/lib/medialane-client";
 
 export type ReportTarget =
   | { type: "TOKEN"; contract: string; tokenId: string; name?: string }
@@ -76,30 +77,6 @@ export function ReportDialog({ target, open, onOpenChange }: ReportDialogProps) 
     setSubmitStep("submitting");
     setSubmitError(null);
 
-    const normalizedContract =
-      target.type === "TOKEN" || target.type === "COLLECTION"
-        ? normalizeAddress("STARKNET", target.contract)
-        : undefined;
-    const normalizedAddress =
-      target.type === "CREATOR" ? normalizeAddress("STARKNET", target.address) : undefined;
-
-    let targetKey: string;
-    if (target.type === "TOKEN") targetKey = `TOKEN:${normalizedContract}:${target.tokenId}`;
-    else if (target.type === "COLLECTION") targetKey = `COLLECTION:${normalizedContract}`;
-    else if (target.type === "CREATOR") targetKey = `CREATOR:${normalizedAddress}`;
-    else targetKey = `COMMENT::${target.commentId}`;
-
-    const payload: Record<string, unknown> = {
-      targetType: target.type,
-      targetKey,
-      targetContract: normalizedContract,
-      targetTokenId: target.type === "TOKEN" ? target.tokenId : undefined,
-      targetAddress: normalizedAddress,
-      targetId: target.type === "COMMENT" ? target.commentId : undefined,
-      categories,
-      description: description.trim() || undefined,
-    };
-
     try {
       const token = getValidToken() ?? (await signIn());
       if (!token) {
@@ -107,31 +84,29 @@ export function ReportDialog({ target, open, onOpenChange }: ReportDialogProps) 
         setSubmitError("Please secure your account to submit a report.");
         return;
       }
-      const res = await fetch("/api/proxy/v1/reports", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      await getMedialaneClient().api.submitReport(
+        {
+          targetType: target.type,
+          categories,
+          description: description.trim() || undefined,
+          ...(target.type === "TOKEN" ? { targetContract: target.contract, targetTokenId: target.tokenId } : {}),
+          ...(target.type === "COLLECTION" ? { targetContract: target.contract } : {}),
+          ...(target.type === "CREATOR" ? { targetAddress: target.address } : {}),
+          ...(target.type === "COMMENT" ? { targetId: target.commentId } : {}),
         },
-        body: JSON.stringify(payload),
-      });
-
-      if (res.status === 409) {
-        setSubmitStep("error");
-        setSubmitError("You've already reported this content.");
-        return;
-      }
-      if (res.status === 429) {
-        setSubmitStep("error");
-        setSubmitError("Too many reports — please wait before trying again.");
-        return;
-      }
-      if (!res.ok) throw new Error("Unexpected error");
+        token,
+      );
 
       setSubmitStep("success");
-    } catch {
+    } catch (err) {
       setSubmitStep("error");
-      setSubmitError("Something went wrong. Please try again.");
+      if (err instanceof MedialaneApiError && err.status === 409) {
+        setSubmitError("You've already reported this content.");
+      } else if (err instanceof MedialaneApiError && err.status === 429) {
+        setSubmitError("Too many reports — please wait before trying again.");
+      } else {
+        setSubmitError("Something went wrong. Please try again.");
+      }
     }
   };
 

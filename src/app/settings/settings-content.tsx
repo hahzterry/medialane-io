@@ -220,12 +220,11 @@ export default function SettingsContent() {
   }
 
   async function attachNewWallet(newWalletSiwsToken: string, authToken: string) {
-    const res = await fetch("/api/proxy/v1/users/me/generate-wallet", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
-      body: JSON.stringify({ newWalletSiwsToken }),
-    });
-    if (!res.ok) throw new UserFacingError("Failed to switch to the new wallet");
+    try {
+      await getMedialaneClient().api.generateWallet(newWalletSiwsToken, authToken);
+    } catch {
+      throw new UserFacingError("Failed to switch to the new wallet");
+    }
     window.location.reload();
   }
 

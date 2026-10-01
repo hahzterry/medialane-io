@@ -44,9 +44,9 @@ export default async function CoinExplorePage({ params }: Props) {
     buildProductJsonLd({
       name,
       path,
-      description: coin?.description,
+      description: coin?.description ?? undefined,
       image: imageUrl,
-      brand: coin?.creator,
+      brand: coin?.creator ?? undefined,
     }),
     buildBreadcrumbJsonLd([
       { name: "Coins", path: "/coins" },

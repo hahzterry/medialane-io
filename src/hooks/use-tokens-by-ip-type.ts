@@ -1,7 +1,7 @@
 "use client";
 
 import useSWR from "swr";
-import { apiFetch } from "@/lib/api-fetch";
+import { getMedialaneClient } from "@/lib/medialane-client";
 import type { ApiToken, ApiResponse } from "@medialane/sdk";
 
 export function useTokensByIpType(
@@ -9,18 +9,12 @@ export function useTokensByIpType(
   page = 1,
   limit = 24
 ) {
-  const params = new URLSearchParams({
-    page: String(page),
-    limit: String(limit),
-    sort: "recent",
-    ...(ipTypeSlug ? { ipType: ipTypeSlug } : {}),
-  });
 
   const key = `tokens-by-type-${ipTypeSlug ?? "all"}-${page}-${limit}`;
 
   const { data, error, isLoading, mutate } = useSWR<ApiResponse<ApiToken[]>>(
     key,
-    () => apiFetch<ApiResponse<ApiToken[]>>(`/v1/tokens?${params}`),
+    () => getMedialaneClient().api.getTokens({ page, limit, sort: "recent", ipType: ipTypeSlug ?? undefined }),
     { revalidateOnFocus: false, refreshInterval: 30000 }
   );
 

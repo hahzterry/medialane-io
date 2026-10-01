@@ -1,38 +1,5 @@
-export type RemixOfferStatus =
-  | "PENDING"
-  | "AUTO_PENDING"
-  | "APPROVED"
-  | "COMPLETED"
-  | "REJECTED"
-  | "EXPIRED"
-  | "SELF_MINTED";
-
-export interface RemixOffer {
-  id: string;
-  status: RemixOfferStatus;
-  originalContract: string;
-  originalTokenId: string;
-  creatorAddress: string;
-  requesterAddress: string | null;
-  message?: string | null;
-  price?: { raw: string; formatted: string; currency: string; decimals: number };
-  licenseType: string;
-  commercial: boolean;
-  derivatives: boolean;
-  royaltyPct: number | null;
-  approvedCollection: string | null;
-  remixContract: string | null;
-  remixTokenId: string | null;
-  orderHash: string | null;
-  createdAt: string;
-  expiresAt: string;
-  updatedAt: string;
-}
-
-export interface RemixOfferListResponse {
-  data: RemixOffer[];
-  meta: { page: number; limit: number; total: number };
-}
+export type { RemixOfferStatus } from "@medialane/sdk";
+export type { ApiRemixOffer as RemixOffer } from "@medialane/sdk";
 
 export interface PublicRemix {
   id: string;

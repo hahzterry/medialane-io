@@ -21,7 +21,6 @@ const verifyOnStarknet = async (txHash: string): Promise<void> => {
   await assertTransactionSucceeded(starknetProvider, txHash);
 };
 
-const API_BASE = "/api/proxy";
 
 export interface LaunchCoinInput {
   name: string;
@@ -106,11 +105,7 @@ export function useLaunchCoin(deps: UseLaunchCoinDeps = {}) {
         await verify(launched.txHash);
 
         setStatus("indexing");
-        await fetch(`${API_BASE}/v1/coins/sync`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ coinAddress, owner: ownerAddr }),
-        }).catch(() => {  });
+        await client.api.syncCoin(coinAddress, ownerAddr).catch(() => {});
 
         setStatus("done");
         return { coinAddress, txHash: launched.txHash };

@@ -1,7 +1,7 @@
 "use client";
 
 import useSWR from "swr";
-import { apiFetch, ApiError } from "@/lib/api-fetch";
+import { getMedialaneClient } from "@/lib/medialane-client";
 import { useWalletNativeSession } from "@/hooks/use-wallet-native-session";
 import { useSiwsToken } from "@/hooks/use-siws-token";
 
@@ -26,16 +26,8 @@ export function useGatedContent(contract: string | undefined): GatedContentState
     contract && hasWallet ? ["gated-content", contract] : null,
     async () => {
       const token = getValidToken() ?? (await signIn());
-      try {
-        return await apiFetch<GatedContent>(
-          `/v1/collections/${contract}/gated-content`,
-          { bearer: token }
-        );
-      } catch (err) {
-
-        if (err instanceof ApiError && err.status === 403) return "not_holder";
-        throw err;
-      }
+      if (!token) throw new Error("Wallet sign-in is required");
+      return (await getMedialaneClient().api.getGatedContent(contract!, token)) ?? "not_holder";
     },
     { shouldRetryOnError: false, revalidateOnFocus: false }
   );

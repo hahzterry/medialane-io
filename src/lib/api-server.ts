@@ -1,61 +1,34 @@
+import { unstable_cache } from "next/cache";
+import { getMedialaneClient } from "@/lib/medialane-client";
 
+const REVALIDATE_SECONDS = 60;
+const api = () => getMedialaneClient().api;
 
-
-const BASE = process.env.NEXT_PUBLIC_MEDIALANE_BACKEND_URL ?? "";
-const KEY  = process.env.MEDIALANE_API_KEY ?? "";
-
-async function apiFetch<T>(path: string): Promise<T | null> {
-  try {
-
-    const res = await fetch(`${BASE}${path}`, {
-      headers: { "x-api-key": KEY },
-      next: { revalidate: 60 },
-      signal: AbortSignal.timeout(5000),
-    });
-    if (!res.ok) return null;
-    const json = await res.json();
-    return json.data as T;
-  } catch {
-    return null;
-  }
+/** Server-side reads for page metadata: cached briefly, and null when the backend can't answer. */
+function cached<A extends (string | number)[], T>(name: string, read: (...args: A) => Promise<T>) {
+  return unstable_cache(
+    async (...args: A): Promise<T | null> => {
+      try {
+        return await read(...args);
+      } catch {
+        return null;
+      }
+    },
+    [name],
+    { revalidate: REVALIDATE_SECONDS },
+  );
 }
 
 export { toAbsoluteImageUrl as ipfsToHttpServer } from "@medialane/ui/utils/ipfs";
 
-export async function fetchTokenMeta(contract: string, tokenId: string) {
-  return apiFetch<{ name?: string; description?: string; image?: string; metadata?: { name?: string; description?: string; image?: string } }>(
-    `/v1/tokens/${contract}/${tokenId}`
-  );
-}
+export const fetchTokenMeta = cached("token-meta", async (contract: string, tokenId: string) =>
+  (await api().getToken(contract, tokenId)).data);
 
-export async function fetchCollectionMeta(contract: string) {
-  return apiFetch<{ name?: string; description?: string; image?: string; totalSupply?: number }>(
-    `/v1/collections/${contract}`
-  );
-}
+export const fetchCollectionMeta = cached("collection-meta", async (contract: string) =>
+  (await api().getCollection(contract)).data);
 
-export async function fetchDropMeta(contract: string) {
-  return apiFetch<{ name?: string | null; description?: string | null; image?: string | null }>(
-    `/v1/drop/${contract}/info`
-  );
-}
+export const fetchDropMeta = cached("drop-meta", (contract: string) => api().getDropInfo(contract));
 
-export async function fetchCoinMeta(contract: string) {
-  return apiFetch<{ name?: string; description?: string; image?: string; creator?: string }>(
-    `/v1/coins/${contract}`
-  );
-}
+export const fetchCoinMeta = cached("coin-meta", async (contract: string) => (await api().getCoin(contract)).data);
 
-export async function fetchCreatorProfile(username: string) {
-  return apiFetch<{
-    walletAddress?: string;
-    username?: string;
-    name?: string;
-    bio?: string;
-    avatarImage?: string;
-    websiteUrl?: string | null;
-    twitterUrl?: string | null;
-    discordUrl?: string | null;
-    telegramUrl?: string | null;
-  }>(`/v1/creators/by-username/${encodeURIComponent(username.toLowerCase())}`);
-}
+export const fetchCreatorProfile = cached("creator-profile", (username: string) => api().getCreatorByUsername(username));

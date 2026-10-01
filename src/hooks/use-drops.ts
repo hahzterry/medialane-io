@@ -1,36 +1,18 @@
 "use client";
 
 import useSWR from "swr";
-import { apiFetch } from "@/lib/api-fetch";
-import type { ApiCollection, ApiMeta } from "@medialane/sdk";
+import type { ApiCollection, ApiDropInfo, ApiDropState, ApiMeta, DropMintStatus } from "@medialane/sdk";
 import { getDropStatus, type DropConditions, type DropStatus } from "@medialane/ui";
+import { getMedialaneClient } from "@/lib/medialane-client";
 
 export { getDropStatus };
-export type { DropConditions, DropStatus };
-
-export interface DropMintStatus {
-  mintedByWallet: number;
-  totalMinted: number;
-}
-
-export interface ApiDropInfo {
-  contractAddress: string;
-  name: string | null;
-  symbol: string | null;
-  description: string | null;
-  image: string | null;
-  owner: string | null;
-  totalMinted: number;
-  conditions: DropConditions | null;
-}
+export type { DropConditions, DropStatus, DropMintStatus, ApiDropInfo };
+export type OnChainDropState = ApiDropState;
 
 export function useDropCollections() {
-  const { data, error, isLoading, mutate } = useSWR<{ data: ApiCollection[]; meta: ApiMeta }>(
+  const { data, error, isLoading, mutate } = useSWR<{ data: ApiCollection[]; meta?: ApiMeta }>(
     "drop-collections",
-    () =>
-      apiFetch<{ data: ApiCollection[]; meta: ApiMeta }>(
-        `/v1/collections?${new URLSearchParams({ service: "drop-collection", hideEmpty: "false", limit: "50" })}`
-      ),
+    () => getMedialaneClient().api.listCollections({ service: "drop-collection", hideEmpty: false, limit: 50 }),
     { revalidateOnFocus: false }
   );
 
@@ -45,61 +27,29 @@ export function useDropCollections() {
 
 export function useDropMintStatus(collection: string | null, wallet: string | null) {
   const key = collection && wallet ? `drop-mint-status-${collection}-${wallet}` : null;
-
   const { data, error, isLoading, mutate } = useSWR<DropMintStatus>(
     key,
-    async () => {
-      const json = await apiFetch<{ data: DropMintStatus }>(`/v1/drop/mint-status/${collection}/${wallet}`);
-      return json.data;
-    },
+    () => getMedialaneClient().api.getDropMintStatus(collection!, wallet!),
     { revalidateOnFocus: false, shouldRetryOnError: false }
   );
-
   return { mintStatus: data ?? null, isLoading, error, mutate };
 }
 
 export function useDropInfo(contractAddress: string | null) {
   const key = contractAddress ? `drop-info-${contractAddress}` : null;
-
-  const { data, error, isLoading } = useSWR<ApiDropInfo>(
+  const { data, error, isLoading } = useSWR<ApiDropInfo | null>(
     key,
-    async () => {
-      const json = await apiFetch<{ data: ApiDropInfo }>(`/v1/drop/${contractAddress}/info`);
-      return json.data;
-    },
+    () => getMedialaneClient().api.getDropInfo(contractAddress!),
     { revalidateOnFocus: false, shouldRetryOnError: false }
   );
-
   return { dropInfo: data ?? null, isLoading, error };
-}
-
-export interface OnChainDropState {
-  conditions: DropConditions | null;
-  totalMinted: number;
-  maxSupply: number;
-  allowlistEnabled: boolean;
-  paused: boolean;
 }
 
 export function useOnChainDropState(contract: string | null) {
   const { data, error, isLoading, mutate } = useSWR<OnChainDropState>(
     contract ? `drop-onchain-${contract}` : null,
-    async () => {
-      const { data } = await apiFetch<{ data: OnChainDropState }>(`/v1/drop/${contract}/state`);
-      return data;
-    },
-    {
-      revalidateOnFocus: false,
-      refreshInterval: 30_000,
-      shouldRetryOnError: false,
-
-      onError: (err) => {
-        if (process.env.NODE_ENV !== "production") {
-          console.warn(`[drop-onchain] read failed for ${contract}:`, err);
-        }
-      },
-    }
+    () => getMedialaneClient().api.getDropState(contract!),
+    { revalidateOnFocus: false, refreshInterval: 30_000, shouldRetryOnError: false }
   );
-
   return { state: data ?? null, isLoading, error, mutate };
 }
