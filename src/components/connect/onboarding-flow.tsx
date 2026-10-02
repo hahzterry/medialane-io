@@ -15,9 +15,10 @@ import { useSiwsToken } from "@/hooks/use-siws-token";
 import { fireConfetti } from "@/lib/confetti";
 import { MedialaneApiError } from "@medialane/sdk";
 import { mediaWallet } from "@/lib/wallet/client";
-import { adoptSessionWallet, setupSessionWalletKey } from "@medialane/sdk/starknet";
+import { adoptSessionWallet, claimSessionWallet } from "@medialane/sdk/starknet";
 import { createOwnerKey } from "@/lib/wallet/passkey";
-import { saveSealedOwner, notifyWalletChange } from "@/lib/wallet/store";
+import { removeDevice } from "@/lib/wallet/devices";
+import { loadSealedOwner, saveSealedOwner, notifyWalletChange } from "@/lib/wallet/store";
 
 export type OnboardingStep =
   | "email"
@@ -129,12 +130,14 @@ export function OnboardingFlow({ start = "email", onDone, autoStartWallet = true
       setCanRetry(true);
       setStep("creating-passkey");
       try {
-        await setupSessionWalletKey(getMedialaneClient().api, walletAddress, {
+        await claimSessionWallet(getMedialaneClient().api, walletAddress, {
           createOwnerKey,
+          loadOwner: loadSealedOwner,
           saveOwner: (sealed) => {
             saveSealedOwner(sealed);
             notifyWalletChange();
           },
+          removeOwner: removeDevice,
         });
         keySetupAddressRef.current = null;
         fireConfetti();
