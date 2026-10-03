@@ -1,14 +1,11 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { parseTemplateRequest, renderTemplate } from "./mail-templates";
+import { parseTemplateRequest, renderTemplate, type RenderedEmail } from "./mail-templates";
 const SINGLE_EMAIL = /^[^\s@,;<>"]+@[^\s@,;<>"]+\.[^\s@,;<>"]+$/;
 const FROM_NAME = /^[^\r\n<>@:]{1,40}$/;
 const HMAC_KEY = "mail-relay-auth";
 
-export interface RelayEmail {
+export interface RelayEmail extends RenderedEmail {
   to: string;
-  subject: string;
-  html: string;
-  text: string;
   fromName: string;
 }
 
@@ -23,23 +20,8 @@ export function isRelayAuthorized(secret: string, provided: string): boolean {
 const text = (value: unknown, max: number): string | null =>
   typeof value === "string" && value.length > 0 && value.length <= max ? value : null;
 
-export function parseRelayEmail(body: unknown): RelayEmail | null {
-  if (typeof body !== "object" || body === null) return null;
-  const b = body as Record<string, unknown>;
-
-  const to = text(b.to, 254);
-  const subject = text(b.subject, 200);
-  const html = text(b.html, 200_000);
-  const plain = text(b.text, 100_000);
-  const fromName = b.fromName === undefined ? "Medialane.io" : text(b.fromName, 40);
-
-  if (!to || !subject || !html || !plain || !fromName) return null;
-  if (!isSingleEmailAddress(to) || /[\r\n]/.test(subject) || !FROM_NAME.test(fromName)) return null;
-  return { to, subject, html, text: plain, fromName };
-}
-
 export function parseRelayRequest(body: unknown, appUrl: string): RelayEmail | null {
-  if (typeof body !== "object" || body === null || !("template" in body)) return parseRelayEmail(body);
+  if (typeof body !== "object" || body === null) return null;
   const b = body as Record<string, unknown>;
 
   const to = text(b.to, 254);
