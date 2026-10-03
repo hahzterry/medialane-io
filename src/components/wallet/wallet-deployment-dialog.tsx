@@ -5,6 +5,8 @@ import { Loader2, ShieldCheck, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { mediaWallet } from "@/lib/wallet/client";
+import { describeWalletFailure, isPasskeyCancelled } from "@/lib/onboarding/failures";
+import { detectPasskeySupport } from "@/lib/onboarding/passkey-support";
 import { type DeploymentStep, type DeploymentResult } from "@medialane/sdk/starknet";
 import {
   Dialog,
@@ -36,8 +38,8 @@ export function WalletDeploymentDialog({ open, onOpenChange, onComplete }: Walle
       const result = await mediaWallet.completeDeployment(setStep);
       await onComplete(result);
       onOpenChange(false);
-    } catch {
-      setError("Something went wrong finishing your wallet setup. Please try again.");
+    } catch (err) {
+      setError(describeWalletFailure(err, isPasskeyCancelled(err) ? await detectPasskeySupport() : "unknown").message);
     } finally {
       setStep(null);
     }

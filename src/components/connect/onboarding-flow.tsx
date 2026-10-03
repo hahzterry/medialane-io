@@ -21,6 +21,8 @@ import { removeDevice } from "@/lib/wallet/devices";
 import { RESEND_COOLDOWN_SECONDS } from "@/lib/email-code";
 import { loadSealedOwner, saveSealedOwner, notifyWalletChange } from "@/lib/wallet/store";
 import { afterCodeVerified, afterEmailCheck, afterRegister } from "@/lib/onboarding/decisions";
+import { describeWalletFailure, isPasskeyCancelled } from "@/lib/onboarding/failures";
+import { detectPasskeySupport } from "@/lib/onboarding/passkey-support";
 
 export type OnboardingStep =
   | "email"
@@ -48,19 +50,7 @@ export function walletStepLabel(step: OnboardingStep): string {
   return "Creating passkey…";
 }
 
-const BROWSER_UNSUPPORTED = "Browser not supported. Please try another browser.";
-const GENERIC_FAILURE = "We couldn't finish setting up your account. Please try again.";
-
-export interface WalletFailureNotice {
-  message: string;
-  canRetry: boolean;
-}
-
-export function describeWalletFailure(err: unknown): WalletFailureNotice {
-  const raw = err instanceof Error ? err.message : "";
-  if (/PRF/.test(raw)) return { message: BROWSER_UNSUPPORTED, canRetry: false };
-  return { message: GENERIC_FAILURE, canRetry: true };
-}
+export { describeWalletFailure, type WalletFailureNotice } from "@/lib/onboarding/failures";
 
 export interface OnboardingFlowProps {
   start?: "email" | "wallet";
@@ -121,7 +111,7 @@ export function OnboardingFlow({ start = "email", onDone, autoStartWallet = true
         return;
       }
       console.error("wallet setup failed", err);
-      const notice = describeWalletFailure(err);
+      const notice = describeWalletFailure(err, isPasskeyCancelled(err) ? await detectPasskeySupport() : "unknown");
       setError(notice.message);
       setCanRetry(notice.canRetry);
       setStep("creating-passkey");
@@ -148,7 +138,7 @@ export function OnboardingFlow({ start = "email", onDone, autoStartWallet = true
         finish(true);
       } catch (err) {
         console.error("wallet key setup failed", err);
-        const notice = describeWalletFailure(err);
+        const notice = describeWalletFailure(err, isPasskeyCancelled(err) ? await detectPasskeySupport() : "unknown");
         setError(notice.message);
         setCanRetry(notice.canRetry);
       }
