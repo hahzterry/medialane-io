@@ -21,7 +21,7 @@ export function SettingsPage({
   children: ReactNode;
 }) {
   return (
-    <div className="mx-auto w-full max-w-xl space-y-6 px-4 py-6 sm:py-10">
+    <div className="mx-auto w-full max-w-xl space-y-6 px-4 pb-10 pt-20 sm:pt-24">
       <div className="space-y-2">
         {back ? (
           <Link href="/settings" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">

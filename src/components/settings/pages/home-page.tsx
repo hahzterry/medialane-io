@@ -7,7 +7,7 @@ import { useAccountEmail } from "@/hooks/use-account-email";
 import { useCreatorProfile } from "@/hooks/use-profiles";
 import { useMyUsernameClaim } from "@/hooks/use-username-claims";
 import { useWalletNativeSession } from "@/hooks/use-wallet-native-session";
-import { emailRow, usernameRow, walletRow } from "@/lib/settings/rows";
+import { accountTitle, emailRow, usernameRow, walletRow } from "@/lib/settings/rows";
 
 export default function SettingsHomePage() {
   const { address, isDeployed } = useWalletNativeSession();
@@ -26,7 +26,7 @@ export default function SettingsHomePage() {
               aria-hidden
             />
             <div className="min-w-0 space-y-1">
-              <p className="truncate text-base font-semibold text-foreground">{profile?.name || "Add your name"}</p>
+              <p className="truncate text-base font-semibold text-foreground">{accountTitle(profile?.name, email?.email)}</p>
               <AddressDisplay address={address} chars={6} showCopy />
             </div>
           </div>

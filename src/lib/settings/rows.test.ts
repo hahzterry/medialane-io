@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { emailRow, legacySettingsPath, usernameRow, walletRow } from "./rows";
+import { accountTitle, emailRow, legacySettingsPath, usernameRow, walletRow } from "./rows";
 
 describe("the email row", () => {
   test("shows nothing while the status is still loading", () => {
@@ -17,13 +17,13 @@ describe("the email row", () => {
 });
 
 describe("the wallet row", () => {
-  test("shows nothing while it is still checking", () => {
-    expect(walletRow(null)).toBeNull();
+  test("only speaks up while the wallet is still being set up", () => {
+    expect(walletRow(false)).toEqual({ value: "Setting up", tone: "warn" });
   });
 
-  test("says when the wallet is still being set up, and when it is ready", () => {
-    expect(walletRow(false)).toEqual({ value: "Setting up", tone: "warn" });
-    expect(walletRow(true)).toEqual({ value: "Ready", tone: "ok" });
+  test("says nothing when the wallet is ready or still being checked", () => {
+    expect(walletRow(true)).toBeUndefined();
+    expect(walletRow(null)).toBeUndefined();
   });
 });
 
@@ -32,14 +32,29 @@ describe("the username row", () => {
     expect(usernameRow("ada", null)).toEqual({ value: "@ada", tone: "ok" });
   });
 
-  test("tells a pending or rejected claim apart from no claim at all", () => {
+  test("tells a pending or rejected claim apart", () => {
     expect(usernameRow(null, "PENDING")).toEqual({ value: "Under review", tone: "muted" });
     expect(usernameRow(null, "REJECTED")).toEqual({ value: "Rejected", tone: "warn" });
-    expect(usernameRow(null, null)).toEqual({ value: "Not claimed", tone: "muted" });
+  });
+
+  test("says nothing when there is no claim at all", () => {
+    expect(usernameRow(null, null)).toBeUndefined();
   });
 
   test("an approved handle wins over an older claim record", () => {
     expect(usernameRow("ada", "REJECTED")).toEqual({ value: "@ada", tone: "ok" });
+  });
+});
+
+describe("the account title", () => {
+  test("is the name when there is one", () => {
+    expect(accountTitle("Ada", "a@b.co")).toBe("Ada");
+  });
+
+  test("falls back to the email, then to a plain label, never a prompt", () => {
+    expect(accountTitle(null, "a@b.co")).toBe("a@b.co");
+    expect(accountTitle("", "a@b.co")).toBe("a@b.co");
+    expect(accountTitle(undefined, null)).toBe("Your account");
   });
 });
 
