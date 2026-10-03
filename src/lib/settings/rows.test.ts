@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { accountTitle, emailRow, formatDeadline, legacySettingsPath, usernameRow, walletRow } from "./rows";
+import { accountTitle, emailBannerText, emailRow, formatDeadline, legacySettingsPath, usernameRow, walletRow } from "./rows";
 
 describe("the email row", () => {
   test("shows nothing while the status is still loading", () => {
@@ -86,5 +86,16 @@ describe("writing a deadline as a date", () => {
   test("is a plain date in UTC, short or long", () => {
     expect(formatDeadline("2026-10-10T23:59:00.000Z", "short")).toBe("10 Oct");
     expect(formatDeadline("2026-10-10T23:59:00.000Z", "long")).toBe("10 October");
+  });
+});
+
+describe("the line under 'Verify your email' in the wallet panel", () => {
+  test("names the date when there is one", () => {
+    expect(emailBannerText("2026-10-10T12:00:00.000Z")).toBe("Confirm by 10 October to keep your account");
+  });
+
+  test("falls back to the general reason when there is no date", () => {
+    expect(emailBannerText(null)).toBe("Validate to access all the platform features");
+    expect(emailBannerText(undefined)).toBe("Validate to access all the platform features");
   });
 });

@@ -31,6 +31,9 @@ export function accountTitle(name: string | null | undefined, email: string | nu
   return name || email || "Your account";
 }
 
+export const emailBannerText = (deadline: string | null | undefined): string =>
+  deadline ? `Confirm by ${formatDeadline(deadline, "long")} to keep your account` : "Validate to access all the platform features";
+
 const LEGACY_TABS: Record<string, string> = {
   account: "/settings/email",
   profile: "/settings/profile",

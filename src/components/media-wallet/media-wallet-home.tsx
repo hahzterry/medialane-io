@@ -8,6 +8,7 @@ import { useWalletNativeSession } from "@/hooks/use-wallet-native-session";
 import { useTokenBalance } from "@/hooks/use-erc20-balance";
 import { useTokensByOwner } from "@/hooks/use-tokens";
 import { useEmailVerificationStatus } from "@/hooks/use-email-verification-required";
+import { emailBannerText } from "@/lib/settings/rows";
 import { ActivateCard } from "./activate-card";
 import { QuickAction } from "./quick-action";
 import { ReceiveCard } from "./receive-card";
@@ -169,7 +170,7 @@ export function MediaWalletHome({
           </div>
           <div className="min-w-0 flex-1">
             <div className="text-sm font-semibold">Verify your email</div>
-            <div className="text-xs text-muted-foreground">Validate to access all the platform features</div>
+            <div className="text-xs text-muted-foreground">{emailBannerText(emailStatus?.deadline)}</div>
           </div>
         </Link>
       )}
@@ -235,7 +236,7 @@ export function MediaWalletHome({
         rel="noopener noreferrer"
         className="mt-auto text-center text-xs text-muted-foreground/60 transition-colors hover:text-muted-foreground"
       >
-        Use another Starknet wallet
+        Use another wallet
       </a>
     </main>
   );
