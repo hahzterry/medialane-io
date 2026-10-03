@@ -8,7 +8,8 @@ import { emailCodeReducer, initialEmailCodeState, type EmailCodeState } from "@/
 export interface EmailCode {
   state: EmailCodeState;
   setCode(code: string): void;
-  send(to?: string): Promise<void>;
+  send(to?: string): Promise<boolean>;
+  fail(message: string): void;
   verify(options?: { code?: string; after?: () => Promise<void> | void }): Promise<boolean>;
   markReady(): void;
 }
@@ -24,13 +25,15 @@ export function useEmailCode(email: string | null): EmailCode {
 
   const send = useCallback(
     async (to = email) => {
-      if (!to) return;
+      if (!to) return false;
       dispatch({ type: "send-started" });
       try {
         await getMedialaneClient().api.requestEmailCode(to);
         dispatch({ type: "send-succeeded" });
+        return true;
       } catch (err) {
         dispatch({ type: "send-failed", message: describeError(err, "Couldn't send the code. Please try again.").message });
+        return false;
       }
     },
     [email],
@@ -59,5 +62,6 @@ export function useEmailCode(email: string | null): EmailCode {
     send,
     verify,
     markReady: () => dispatch({ type: "send-succeeded" }),
+    fail: (message) => dispatch({ type: "verify-failed", message }),
   };
 }

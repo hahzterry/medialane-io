@@ -1,16 +1,17 @@
 "use client";
 
 import { describeError } from "@medialane/ui";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { EmailCodeEntry } from "@/components/connect/email-code-entry";
 import { getMedialaneClient } from "@/lib/medialane-client";
 import { saveAccountAddress, saveAccountEmail } from "@/lib/wallet/account-wallet";
 import { useWalletNativeSession } from "@/hooks/use-wallet-native-session";
 import { useEmailVerificationStatus } from "@/hooks/use-email-verification-required";
+import { useEmailCode } from "@/hooks/use-email-code";
 import { useSiwsToken } from "@/hooks/use-siws-token";
 import { fireConfetti } from "@/lib/confetti";
 import { MedialaneApiError } from "@medialane/sdk";
@@ -23,19 +24,9 @@ import { loadSealedOwner, saveSealedOwner, notifyWalletChange } from "@/lib/wall
 import { afterCodeVerified, afterEmailCheck, afterRegister } from "@/lib/onboarding/decisions";
 import { describeWalletFailure, isPasskeyCancelled } from "@/lib/onboarding/failures";
 import { detectPasskeySupport } from "@/lib/onboarding/passkey-support";
+import { flowReducer, initialFlow, retryTarget, type OnboardingStep } from "@/lib/onboarding/flow";
 
-export type OnboardingStep =
-  | "email"
-  | "checking-email"
-  | "registering"
-  | "code"
-  | "verifying-code"
-  | "add-email"
-  | "creating-passkey"
-  | "deploying"
-  | "signing-in"
-  | "done";
-
+export type { OnboardingStep };
 export { RESEND_COOLDOWN_SECONDS };
 
 const WALLET_STEPS: OnboardingStep[] = ["creating-passkey", "deploying", "signing-in"];
@@ -59,18 +50,12 @@ export interface OnboardingFlowProps {
 }
 
 export function OnboardingFlow({ start = "email", onDone, autoStartWallet = true }: OnboardingFlowProps) {
-  const [step, setStep] = useState<OnboardingStep>(start === "wallet" ? "creating-passkey" : "email");
-  const [error, setError] = useState<string | null>(null);
+  const [flow, dispatch] = useReducer(flowReducer, start, initialFlow);
   const [email, setEmail] = useState("");
-  const [code, setCode] = useState("");
-  const [resendCooldown, setResendCooldown] = useState(0);
-  const [resending, setResending] = useState(false);
-  const [canRetry, setCanRetry] = useState(true);
   const [addEmailInput, setAddEmailInput] = useState("");
   const [addEmailSaving, setAddEmailSaving] = useState(false);
-  const accountExistedRef = useRef(false);
+  const emailCode = useEmailCode(email);
   const walletStartedRef = useRef(false);
-  const keySetupAddressRef = useRef<string | null>(null);
 
   const { hasWallet } = useWalletNativeSession();
   const emailStatus = useEmailVerificationStatus();
@@ -79,27 +64,26 @@ export function OnboardingFlow({ start = "email", onDone, autoStartWallet = true
 
   useEffect(() => setMounted(true), []);
 
-  useEffect(() => {
-    if (resendCooldown === 0) return;
-    const id = setTimeout(() => setResendCooldown((s) => Math.max(0, s - 1)), 1000);
-    return () => clearTimeout(id);
-  }, [resendCooldown]);
-
   const finish = useCallback(
     (celebrated = false) => {
       if (celebrated) fireConfetti();
-      setStep("done");
+      dispatch({ type: "finished" });
       onDone?.({ celebrated });
     },
     [onDone],
   );
 
+  const failWallet = useCallback(async (err: unknown) => {
+    const notice = describeWalletFailure(err, isPasskeyCancelled(err) ? await detectPasskeySupport() : "unknown");
+    dispatch({ type: "wallet-failed", message: notice.message, canRetry: notice.canRetry });
+  }, []);
+
   const runWalletSetup = useCallback(async () => {
-    setError(null);
-    setCanRetry(true);
-    setStep("creating-passkey");
+    dispatch({ type: "wallet-setup-started" });
     try {
-      const { siwsToken } = await mediaWallet.completeDeployment((s) => setStep(s as OnboardingStep));
+      const { siwsToken } = await mediaWallet.completeDeployment((s) =>
+        dispatch({ type: "wallet-progress", step: s as "creating-passkey" | "deploying" | "signing-in" }),
+      );
       await getMedialaneClient().api.upsertMyWallet(siwsToken, {
         walletType: "MEDIAWALLET",
         chain: "STARKNET",
@@ -107,23 +91,17 @@ export function OnboardingFlow({ start = "email", onDone, autoStartWallet = true
       finish(true);
     } catch (err) {
       if (err instanceof MedialaneApiError && err.message === "ACCOUNT_LINK_REQUIRED") {
-        setStep("email");
+        dispatch({ type: "link-required" });
         return;
       }
       console.error("wallet setup failed", err);
-      const notice = describeWalletFailure(err, isPasskeyCancelled(err) ? await detectPasskeySupport() : "unknown");
-      setError(notice.message);
-      setCanRetry(notice.canRetry);
-      setStep("creating-passkey");
+      await failWallet(err);
     }
-  }, [finish]);
+  }, [finish, failWallet]);
 
   const runKeySetup = useCallback(
     async (walletAddress: string) => {
-      keySetupAddressRef.current = walletAddress;
-      setError(null);
-      setCanRetry(true);
-      setStep("creating-passkey");
+      dispatch({ type: "key-setup-started", address: walletAddress });
       try {
         await claimSessionWallet(getMedialaneClient().api, walletAddress, {
           createOwnerKey,
@@ -134,21 +112,19 @@ export function OnboardingFlow({ start = "email", onDone, autoStartWallet = true
           },
           removeOwner: removeDevice,
         });
-        keySetupAddressRef.current = null;
+        dispatch({ type: "key-setup-finished" });
         finish(true);
       } catch (err) {
         console.error("wallet key setup failed", err);
-        const notice = describeWalletFailure(err, isPasskeyCancelled(err) ? await detectPasskeySupport() : "unknown");
-        setError(notice.message);
-        setCanRetry(notice.canRetry);
+        await failWallet(err);
       }
     },
-    [finish],
+    [finish, failWallet],
   );
 
   const retryWallet = () => {
-    const address = keySetupAddressRef.current;
-    void (address ? runKeySetup(address) : runWalletSetup());
+    const target = retryTarget(flow);
+    void (target.type === "key-setup" ? runKeySetup(target.walletAddress) : runWalletSetup());
   };
 
   useEffect(() => {
@@ -163,22 +139,16 @@ export function OnboardingFlow({ start = "email", onDone, autoStartWallet = true
       finish();
       return;
     }
-    setStep("add-email");
+    dispatch({ type: "needs-email" });
   }, [mounted, hasWallet, emailStatus, finish]);
 
   const requestLoginCode = async () => {
-    try {
-      await getMedialaneClient().api.requestEmailCode(email);
-      setResendCooldown(RESEND_COOLDOWN_SECONDS);
-      setStep("code");
-    } catch {
-      setError("Couldn't send the code. Please try again.");
-      setStep("email");
-    }
+    if (await emailCode.send(email)) dispatch({ type: "code-sent" });
+    else dispatch({ type: "email-step-failed", message: "Couldn't send the code. Please try again." });
   };
 
   const registerNewAccount = async () => {
-    setStep("registering");
+    dispatch({ type: "registering" });
     try {
       let outcome: "created" | "already-exists" = "created";
       try {
@@ -188,54 +158,38 @@ export function OnboardingFlow({ start = "email", onDone, autoStartWallet = true
         else throw err;
       }
       if (afterRegister(outcome) === "send-code") {
-        accountExistedRef.current = true;
+        dispatch({ type: "account-found", exists: true });
         await requestLoginCode();
         return;
       }
       saveAccountEmail(email);
       await runWalletSetup();
     } catch {
-      setError("Something went wrong. Please try again.");
-      setStep("email");
+      dispatch({ type: "email-step-failed", message: "Something went wrong. Please try again." });
     }
   };
 
   const continueWithEmail = async () => {
-    setError(null);
-    setStep("checking-email");
+    dispatch({ type: "email-submitted" });
     try {
       const { exists } = await getMedialaneClient().api.checkEmail(email);
-      accountExistedRef.current = exists;
+      dispatch({ type: "account-found", exists });
       if (afterEmailCheck(exists) === "send-code") await requestLoginCode();
       else await registerNewAccount();
     } catch {
-      setError("Something went wrong. Please try again.");
-      setStep("email");
-    }
-  };
-
-  const resendCode = async () => {
-    if (resendCooldown > 0 || resending) return;
-    setResending(true);
-    setError(null);
-    try {
-      await getMedialaneClient().api.requestEmailCode(email);
-      setResendCooldown(RESEND_COOLDOWN_SECONDS);
-    } catch (err) {
-      setError(describeError(err, "Couldn't resend the code. Please try again.").message);
-    } finally {
-      setResending(false);
+      dispatch({ type: "email-step-failed", message: "Something went wrong. Please try again." });
     }
   };
 
   const verifyLoginCode = async (codeOverride?: string) => {
-    const codeToVerify = codeOverride ?? code;
-    setError(null);
-    setStep("verifying-code");
+    dispatch({ type: "code-submitted" });
+    if (!(await emailCode.verify({ code: codeOverride }))) {
+      dispatch({ type: "code-failed", message: null });
+      return;
+    }
     try {
-      await getMedialaneClient().api.verifyEmailCode(email, codeToVerify);
       saveAccountEmail(email);
-      const wallet = accountExistedRef.current ? await adoptSessionWallet(getMedialaneClient().api, saveAccountAddress) : null;
+      const wallet = flow.accountExisted ? await adoptSessionWallet(getMedialaneClient().api, saveAccountAddress) : null;
       const next = afterCodeVerified(wallet);
       if (next.type === "key-setup") {
         await runKeySetup(next.walletAddress);
@@ -247,8 +201,8 @@ export function OnboardingFlow({ start = "email", onDone, autoStartWallet = true
       }
       await runWalletSetup();
     } catch (err) {
-      setError(describeError(err, "Something went wrong. Please try again.").message);
-      setStep("code");
+      emailCode.fail(describeError(err, "Something went wrong. Please try again.").message);
+      dispatch({ type: "code-failed", message: null });
     }
   };
 
@@ -256,7 +210,7 @@ export function OnboardingFlow({ start = "email", onDone, autoStartWallet = true
     const value = addEmailInput.trim();
     if (!value) return;
     setAddEmailSaving(true);
-    setError(null);
+    dispatch({ type: "add-email-submitted" });
     try {
       const token = getValidToken() ?? (await signIn());
       if (!token) throw new Error("Not authenticated");
@@ -264,11 +218,13 @@ export function OnboardingFlow({ start = "email", onDone, autoStartWallet = true
       saveAccountEmail(value);
       finish();
     } catch (err) {
-      setError(describeError(err, "Couldn't save your email. Please try again.").message);
+      dispatch({ type: "add-email-failed", message: describeError(err, "Couldn't save your email. Please try again.").message });
     } finally {
       setAddEmailSaving(false);
     }
   };
+
+  const { step, error, canRetry } = flow;
 
   const errorBanner = error ? (
     <Alert variant="destructive" className="w-full">
@@ -349,44 +305,7 @@ export function OnboardingFlow({ start = "email", onDone, autoStartWallet = true
         <p className="text-sm text-muted-foreground">
           Enter the 6-digit code we sent to <span className="text-foreground">{email}</span>.
         </p>
-        <InputOTP
-          maxLength={6}
-          value={code}
-          onChange={(value) => setCode(value.replace(/\D/g, ""))}
-          onComplete={(value) => void verifyLoginCode(value)}
-          disabled={step === "verifying-code"}
-        >
-          <InputOTPGroup>
-            {[0, 1, 2, 3, 4, 5].map((i) => (
-              <InputOTPSlot key={i} index={i} className="h-12 w-11 text-lg font-semibold" />
-            ))}
-          </InputOTPGroup>
-        </InputOTP>
-        <Button
-          size="lg"
-          className="w-full gap-2"
-          onClick={() => void verifyLoginCode()}
-          disabled={step === "verifying-code" || code.length !== 6}
-        >
-          {step === "verifying-code" ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-          Verify
-        </Button>
-        <p className="text-xs text-muted-foreground">
-          Didn&apos;t receive it? Check your spam, or{" "}
-          {resendCooldown > 0 ? (
-            <span>resend in {resendCooldown}s</span>
-          ) : (
-            <button
-              type="button"
-              onClick={() => void resendCode()}
-              disabled={resending}
-              className="underline underline-offset-2 hover:text-foreground disabled:opacity-50"
-            >
-              {resending ? "resending…" : "resend the code"}
-            </button>
-          )}
-          .
-        </p>
+        <EmailCodeEntry emailCode={emailCode} onVerify={(code) => void verifyLoginCode(code)} />
       </div>
     );
   }

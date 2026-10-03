@@ -11,9 +11,14 @@ mock.module("next/navigation", () => ({
   useRouter: () => ({ push: (to: string) => pushed.push(to) }),
   usePathname: () => pathname,
 }));
-mock.module("@/hooks/use-wallet-native-session", () => ({ useWalletNativeSession: () => session }));
-mock.module("@/hooks/use-email-verification-required", () => ({ useEmailVerificationStatus: () => emailStatus }));
-mock.module("@/lib/wallet/client", () => ({ mediaWallet: { isDeploying: () => deploying } }));
+const real = {
+  session: await import("@/hooks/use-wallet-native-session"),
+  email: await import("@/hooks/use-email-verification-required"),
+  client: await import("@/lib/wallet/client"),
+};
+mock.module("@/hooks/use-wallet-native-session", () => ({ ...real.session, useWalletNativeSession: () => session }));
+mock.module("@/hooks/use-email-verification-required", () => ({ ...real.email, useEmailVerificationStatus: () => emailStatus }));
+mock.module("@/lib/wallet/client", () => ({ ...real.client, mediaWallet: { ...real.client.mediaWallet, isDeploying: () => deploying } }));
 
 const { OnboardingGate } = await import("./onboarding-gate");
 

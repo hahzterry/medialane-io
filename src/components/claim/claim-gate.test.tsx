@@ -2,7 +2,8 @@ import { afterEach, describe, expect, mock, test } from "bun:test";
 import { cleanup, render, screen } from "@testing-library/react";
 
 let hasWallet = false;
-mock.module("@/hooks/use-wallet-native-session", () => ({ useWalletNativeSession: () => ({ hasWallet }) }));
+const realSession = await import("@/hooks/use-wallet-native-session");
+mock.module("@/hooks/use-wallet-native-session", () => ({ ...realSession, useWalletNativeSession: () => ({ hasWallet }) }));
 mock.module("next/navigation", () => ({ usePathname: () => "/claim/username" }));
 mock.module("next/link", () => ({
   default: ({ href, children, ...rest }: { href: string; children: React.ReactNode }) => (
