@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { accountTitle, emailRow, legacySettingsPath, usernameRow, walletRow } from "./rows";
+import { accountTitle, emailRow, formatDeadline, legacySettingsPath, usernameRow, walletRow } from "./rows";
 
 describe("the email row", () => {
   test("shows nothing while the status is still loading", () => {
@@ -9,6 +9,17 @@ describe("the email row", () => {
   test("warns when there is no email or it is not confirmed yet", () => {
     expect(emailRow({ email: null, verified: false })).toEqual({ value: "Not set", tone: "warn" });
     expect(emailRow({ email: "a@b.co", verified: false })).toEqual({ value: "Not confirmed", tone: "warn" });
+  });
+
+  test("names the date when there is a deadline, short enough for a row", () => {
+    expect(emailRow({ email: "a@b.co", verified: false, deadline: "2026-10-10T12:00:00.000Z" })).toEqual({
+      value: "Confirm by 10 Oct",
+      tone: "warn",
+    });
+  });
+
+  test("a confirmed email ignores any deadline", () => {
+    expect(emailRow({ email: "a@b.co", verified: true, deadline: "2026-10-10T12:00:00.000Z" })).toEqual({ value: "Confirmed", tone: "ok" });
   });
 
   test("is calm once the email is confirmed", () => {
@@ -68,5 +79,12 @@ describe("links to the old tabbed settings", () => {
     expect(legacySettingsPath(undefined)).toBeNull();
     expect(legacySettingsPath("")).toBeNull();
     expect(legacySettingsPath("nonsense")).toBeNull();
+  });
+});
+
+describe("writing a deadline as a date", () => {
+  test("is a plain date in UTC, short or long", () => {
+    expect(formatDeadline("2026-10-10T23:59:00.000Z", "short")).toBe("10 Oct");
+    expect(formatDeadline("2026-10-10T23:59:00.000Z", "long")).toBe("10 October");
   });
 });

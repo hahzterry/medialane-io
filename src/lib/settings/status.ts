@@ -1,8 +1,8 @@
-import type { RowTone } from "./rows";
+import { formatDeadline, type RowTone } from "./rows";
 
 export interface StatusInput {
   address: string | null;
-  email: { email: string | null; verified: boolean } | null;
+  email: { email: string | null; verified: boolean; deadline?: string | null } | null;
   walletDeployed: boolean | null;
   devices: number | null;
   guardians: number | null;
@@ -28,7 +28,10 @@ function headline(input: StatusInput): StatusHeadline | null {
   const { email, walletDeployed } = input;
   if (email === null || walletDeployed === null) return null;
   if (!email.email) return { tone: "warn", text: "Add your email to keep your account", href: "/settings/email" };
-  if (!email.verified) return { tone: "warn", text: "Confirm your email to keep your account", href: "/settings/email" };
+  if (!email.verified) {
+    const when = email.deadline ? ` by ${formatDeadline(email.deadline, "long")}` : "";
+    return { tone: "warn", text: `Confirm your email${when} to keep your account`, href: "/settings/email" };
+  }
   if (!walletDeployed) return { tone: "muted", text: "Your wallet is still setting up" };
   return { tone: "ok", text: "Everything is working" };
 }

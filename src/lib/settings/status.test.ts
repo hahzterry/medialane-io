@@ -21,6 +21,11 @@ describe("the headline", () => {
     expect(h).toEqual({ tone: "warn", text: "Confirm your email to keep your account", href: "/settings/email" });
   });
 
+  test("names the date in the headline when there is a deadline", () => {
+    const h = accountStatus({ ...working, email: { email: "a@b.co", verified: false, deadline: "2026-10-10T12:00:00.000Z" } }).headline;
+    expect(h).toEqual({ tone: "warn", text: "Confirm your email by 10 October to keep your account", href: "/settings/email" });
+  });
+
   test("asks to add an email when there is none", () => {
     const h = accountStatus({ ...working, email: { email: null, verified: false } }).headline;
     expect(h).toEqual({ tone: "warn", text: "Add your email to keep your account", href: "/settings/email" });

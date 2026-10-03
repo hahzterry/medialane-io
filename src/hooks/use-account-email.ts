@@ -9,6 +9,7 @@ import { saveAccountEmail } from "@/lib/wallet/account-wallet";
 export interface AccountEmail {
   email: string | null;
   verified: boolean;
+  deadline: string | null;
 }
 
 export function useAccountEmail() {
@@ -22,11 +23,11 @@ export function useAccountEmail() {
       const token = getValidToken() ?? (await signIn());
       if (!token) return;
       const result = await getMedialaneClient().api.getMyWallet(token);
-      if (result) setStatus({ email: result.email ?? null, verified: result.emailVerified ?? false });
+      if (result) setStatus({ email: result.email ?? null, verified: result.emailVerified ?? false, deadline: result.emailDeadline ?? null });
     })();
   }, [address, getValidToken, signIn]);
 
-  const markVerified = useCallback(() => setStatus((s) => (s ? { ...s, verified: true } : s)), []);
+  const markVerified = useCallback(() => setStatus((s) => (s ? { ...s, verified: true, deadline: null } : s)), []);
 
   const changeEmail = useCallback(
     async (email: string) => {
@@ -34,7 +35,7 @@ export function useAccountEmail() {
       if (!token) throw new Error("Not authenticated");
       const result = await getMedialaneClient().api.changeMyEmail(email, token);
       saveAccountEmail(email);
-      setStatus({ email: result.email, verified: result.emailVerified });
+      setStatus((s) => ({ email: result.email, verified: result.emailVerified, deadline: s?.deadline ?? null }));
     },
     [getValidToken, signIn],
   );

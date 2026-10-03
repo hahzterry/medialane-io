@@ -5,10 +5,15 @@ export interface RowStatus {
   tone: RowTone;
 }
 
-export function emailRow(status: { email: string | null; verified: boolean } | null): RowStatus | null {
+export function formatDeadline(iso: string, style: "short" | "long"): string {
+  return new Date(iso).toLocaleDateString("en-GB", { timeZone: "UTC", day: "numeric", month: style === "short" ? "short" : "long" });
+}
+
+export function emailRow(status: { email: string | null; verified: boolean; deadline?: string | null } | null): RowStatus | null {
   if (!status) return null;
   if (!status.email) return { value: "Not set", tone: "warn" };
-  return status.verified ? { value: "Confirmed", tone: "ok" } : { value: "Not confirmed", tone: "warn" };
+  if (status.verified) return { value: "Confirmed", tone: "ok" };
+  return { value: status.deadline ? `Confirm by ${formatDeadline(status.deadline, "short")}` : "Not confirmed", tone: "warn" };
 }
 
 export function walletRow(isDeployed: boolean | null): RowStatus | undefined {

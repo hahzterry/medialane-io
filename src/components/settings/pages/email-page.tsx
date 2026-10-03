@@ -10,6 +10,7 @@ import { AccountSection } from "@/components/settings/account-section";
 import { SettingsGate, SettingsPage } from "@/components/settings/settings-page";
 import { EmailVerifyDialog } from "@/components/settings/email-verify-dialog";
 import { useAccountEmail } from "@/hooks/use-account-email";
+import { formatDeadline } from "@/lib/settings/rows";
 
 export default function EmailSettingsPage() {
   const { status, markVerified, changeEmail } = useAccountEmail();
@@ -85,18 +86,23 @@ export default function EmailSettingsPage() {
           ) : (
             <div className="space-y-4">
               {status?.email ? (
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="min-w-0 truncate text-sm text-foreground">{status.email}</span>
-                  {status.verified ? (
-                    <Badge variant="outline" className="gap-1 border-emerald-500/40 bg-emerald-500/10 text-[10px] text-emerald-600 dark:text-emerald-400">
-                      <CheckCircle2 className="h-3 w-3" /> Verified
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="gap-1 border-yellow-500/40 bg-yellow-500/10 text-[10px] text-yellow-700 dark:text-yellow-400">
-                      <Clock className="h-3 w-3" /> Not verified
-                    </Badge>
-                  )}
-                </div>
+                <>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="min-w-0 truncate text-sm text-foreground">{status.email}</span>
+                    {status.verified ? (
+                      <Badge variant="outline" className="gap-1 border-emerald-500/40 bg-emerald-500/10 text-[10px] text-emerald-600 dark:text-emerald-400">
+                        <CheckCircle2 className="h-3 w-3" /> Verified
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="gap-1 border-yellow-500/40 bg-yellow-500/10 text-[10px] text-yellow-700 dark:text-yellow-400">
+                        <Clock className="h-3 w-3" /> Not verified
+                      </Badge>
+                    )}
+                  </div>
+                  {status?.email && !status.verified && status.deadline ? (
+                    <p className="text-sm text-muted-foreground">Please confirm by {formatDeadline(status.deadline, "long")}.</p>
+                  ) : null}
+                </>
               ) : (
                 <p className="text-sm text-muted-foreground">{status ? "No email on this account yet." : "Loading…"}</p>
               )}
