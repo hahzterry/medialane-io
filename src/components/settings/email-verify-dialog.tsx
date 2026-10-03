@@ -96,11 +96,11 @@ export function EmailVerifyDialog({ open, onOpenChange, email, onVerified, skipI
             )}
           </div>
           <DialogTitle>
-            {step === "success" ? "Email verified" : "Verify your email"}
+            {step === "success" ? "You're all set" : "Verify your email"}
           </DialogTitle>
           <DialogDescription>
             {step === "success"
-              ? `${email} is now confirmed on your account.`
+              ? "Your email is confirmed. Your account is fully unrestricted."
               : `Enter the 6-digit code we sent to ${email}.`}
           </DialogDescription>
         </DialogHeader>

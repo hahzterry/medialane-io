@@ -131,8 +131,8 @@ export default function VerifyEmailContent() {
                 <CheckCircle2 className="h-6 w-6 text-emerald-500" />
               </div>
             </div>
-            <CardTitle>Email verified</CardTitle>
-            <CardDescription>{email} is confirmed on your account. You can list assets for sale and claim a username.</CardDescription>
+            <CardTitle>You&apos;re all set</CardTitle>
+            <CardDescription>Your email is confirmed. Your account is fully unrestricted.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="btn-border-animated w-full rounded-lg p-[1px]">
