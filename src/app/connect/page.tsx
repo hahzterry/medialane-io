@@ -34,7 +34,11 @@ function ConnectContent() {
             <CardTitle>Connect with your email</CardTitle>
           </CardHeader>
           <CardContent>
-            <OnboardingFlow onDone={() => router.replace(redirectTo ?? "/")} />
+            <OnboardingFlow onDone={({ celebrated }) => {
+                const go = () => router.replace(redirectTo ?? "/");
+                if (celebrated) setTimeout(go, 1600);
+                else go();
+              }} />
           </CardContent>
         </Card>
         <ValuePropCarousel />

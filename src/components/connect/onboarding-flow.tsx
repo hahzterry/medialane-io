@@ -62,7 +62,7 @@ export function describeWalletFailure(err: unknown): WalletFailureNotice {
 
 export interface OnboardingFlowProps {
   start?: "email" | "wallet";
-  onDone?: () => void;
+  onDone?: (result: { celebrated: boolean }) => void;
   autoStartWallet?: boolean;
 }
 
@@ -93,10 +93,14 @@ export function OnboardingFlow({ start = "email", onDone, autoStartWallet = true
     return () => clearTimeout(id);
   }, [resendCooldown]);
 
-  const finish = useCallback(() => {
-    setStep("done");
-    onDone?.();
-  }, [onDone]);
+  const finish = useCallback(
+    (celebrated = false) => {
+      if (celebrated) fireConfetti();
+      setStep("done");
+      onDone?.({ celebrated });
+    },
+    [onDone],
+  );
 
   const runWalletSetup = useCallback(async () => {
     setError(null);
@@ -108,8 +112,7 @@ export function OnboardingFlow({ start = "email", onDone, autoStartWallet = true
         walletType: "MEDIAWALLET",
         chain: "STARKNET",
       });
-      fireConfetti();
-      finish();
+      finish(true);
     } catch (err) {
       if (err instanceof MedialaneApiError && err.message === "ACCOUNT_LINK_REQUIRED") {
         setStep("email");
@@ -140,8 +143,7 @@ export function OnboardingFlow({ start = "email", onDone, autoStartWallet = true
           removeOwner: removeDevice,
         });
         keySetupAddressRef.current = null;
-        fireConfetti();
-        finish();
+        finish(true);
       } catch (err) {
         console.error("wallet key setup failed", err);
         const notice = describeWalletFailure(err);
