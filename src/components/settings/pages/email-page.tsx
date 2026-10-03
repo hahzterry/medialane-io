@@ -2,10 +2,11 @@
 
 import { describeError } from "@medialane/ui";
 import { useState } from "react";
-import { CheckCircle2, Clock, Loader2 } from "lucide-react";
+import { CheckCircle2, Clock, Loader2, Mail } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { AccountSection } from "@/components/settings/account-section";
 import { SettingsGate, SettingsPage } from "@/components/settings/settings-page";
 import { EmailVerifyDialog } from "@/components/settings/email-verify-dialog";
 import { useAccountEmail } from "@/hooks/use-account-email";
@@ -46,8 +47,14 @@ export default function EmailSettingsPage() {
 
   return (
     <SettingsGate>
-      <SettingsPage title="Email" subtitle="Used for account notices and signing back in.">
-        <div className="space-y-4 rounded-2xl border border-border/60 bg-card p-5">
+      <SettingsPage title="Email" subtitle="Used for account notices and signing back in." icon={<Mail className="h-4 w-4 text-white" />}>
+        <AccountSection
+          icon={Mail}
+          iconColor="text-blue-600 dark:text-blue-400"
+          iconBg="bg-blue-500/10"
+          title="Email"
+          description="Used for account notices and signing back in."
+        >
           {editOpen ? (
             <div className="space-y-3">
               <Input
@@ -117,7 +124,7 @@ export default function EmailSettingsPage() {
               </div>
             </div>
           )}
-        </div>
+        </AccountSection>
 
         {status?.email ? (
           <EmailVerifyDialog

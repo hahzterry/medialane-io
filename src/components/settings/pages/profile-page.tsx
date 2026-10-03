@@ -1,14 +1,16 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { CheckCircle2, Clock, Loader2, XCircle } from "lucide-react";
+import { AtSign, CheckCircle2, Clock, Loader2, User, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
-import { SettingsGate, SettingsPage } from "@/components/settings/settings-page";
+import { CopyLinkButton } from "@/components/settings/copy-link-button";
+import { ProfileLivePreview } from "@/components/settings/profile-live-preview";
+import { SettingsGate, SettingsPage, SettingsSection } from "@/components/settings/settings-page";
 import { ClaimError, UsernameClaimInput } from "@/components/settings/username-claim-input";
 import type { ProfileForm } from "@/components/settings/types";
 import { useProfileForm } from "@/hooks/use-profile-form";
@@ -63,32 +65,38 @@ export default function ProfileSettingsPage() {
 
   return (
     <SettingsGate>
-      <SettingsPage title="Username, name & links" subtitle="Your public profile.">
+      <SettingsPage
+        title="Profile"
+        subtitle="Your username, name and links."
+        icon={<User className="h-4 w-4 text-white" />}
+        aside={
+          <ProfileLivePreview form={form} approvedUsername={approvedUsername} walletAddress={address} fallbackImage={undefined} />
+        }
+      >
         {isLoading ? (
           <div className="space-y-4">
+            <Skeleton className="h-4 w-32" />
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-20 w-full" />
             <Skeleton className="h-10 w-full" />
           </div>
         ) : (
           <>
-            <section className="space-y-3 rounded-2xl border border-border/60 bg-card p-5">
-              <div>
-                <h2 className="text-sm font-semibold text-foreground">Username</h2>
-                <p className="mt-0.5 text-xs text-muted-foreground">Claim a unique handle for your shareable profile URL.</p>
-              </div>
-
+            <SettingsSection icon={AtSign} title="Username" description="Claim a unique handle for your shareable profile URL.">
               {approvedUsername ? (
                 <div className="flex items-start gap-3 rounded-xl border border-green-500/40 bg-green-500/5 p-4">
                   <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-green-600 dark:text-green-500" />
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-foreground">Username active</p>
-                    <p className="mt-0.5 break-words text-sm text-muted-foreground">
-                      Your profile is live at{" "}
-                      <a href={`/creator/${approvedUsername}`} className="font-medium tabular-nums text-primary hover:underline">
-                        medialane.io/creator/{approvedUsername}
-                      </a>
-                    </p>
+                  <div className="min-w-0 flex-1 space-y-3">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Username active</p>
+                      <p className="mt-0.5 break-words text-sm text-muted-foreground">
+                        Your profile is live at{" "}
+                        <a href={`/creator/${approvedUsername}`} className="font-medium tabular-nums text-primary hover:underline">
+                          medialane.io/creator/{approvedUsername}
+                        </a>
+                      </p>
+                    </div>
+                    <CopyLinkButton url={`https://www.medialane.io/creator/${approvedUsername}`} />
                   </div>
                 </div>
               ) : null}
@@ -137,10 +145,9 @@ export default function ProfileSettingsPage() {
                   {claimInput}
                 </div>
               ) : null}
-            </section>
+            </SettingsSection>
 
-            <section className="space-y-4 rounded-2xl border border-border/60 bg-card p-5">
-              <h2 className="text-sm font-semibold text-foreground">Identity</h2>
+            <SettingsSection title="Identity" description="Your public profile">
               {field("name", "Name", "Your name")}
               <div className="space-y-1.5">
                 <Label htmlFor="bio">Bio</Label>
@@ -152,17 +159,16 @@ export default function ProfileSettingsPage() {
                   placeholder="Tell the world about yourself and your work…"
                 />
               </div>
-            </section>
+            </SettingsSection>
 
-            <section className="space-y-4 rounded-2xl border border-border/60 bg-card p-5">
-              <h2 className="text-sm font-semibold text-foreground">Links</h2>
+            <SettingsSection title="Links" description="Your web presence">
               {field("websiteUrl", "Website", "https://…")}
               {field("twitterUrl", "Twitter / X", "https://twitter.com/…")}
               {field("discordUrl", "Discord", "https://discord.gg/…")}
               {field("telegramUrl", "Telegram", "https://t.me/…")}
-            </section>
+            </SettingsSection>
 
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-3 border-t border-border pt-4">
               <Button onClick={save} disabled={saving || !address} className="w-full sm:w-auto">
                 {saving ? (
                   <>

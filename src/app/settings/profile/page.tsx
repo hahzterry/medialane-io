@@ -3,7 +3,7 @@ import { canonical } from "@/lib/seo";
 import Content from "@/components/settings/pages/profile-page";
 
 export const metadata: Metadata = {
-  title: "Username, Name & Links — Settings",
+  title: "Profile — Settings",
   alternates: canonical("/settings/profile"),
   robots: { index: false, follow: false },
 };

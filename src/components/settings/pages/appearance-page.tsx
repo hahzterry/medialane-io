@@ -2,18 +2,20 @@
 
 import { AssetPicker, type OwnedAsset } from "@medialane/ui";
 import { useState } from "react";
-import { CheckCircle2, Loader2 } from "lucide-react";
+import { CheckCircle2, ImageIcon, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FastMint } from "@/components/launchpad/fast-mint";
-import { SettingsGate, SettingsPage } from "@/components/settings/settings-page";
+import { ProfileLivePreview } from "@/components/settings/profile-live-preview";
+import { SettingsGate, SettingsPage, SettingsSection } from "@/components/settings/settings-page";
 import { useProfileForm } from "@/hooks/use-profile-form";
 import { useTokensByOwner } from "@/hooks/use-tokens";
+import { useMyUsernameClaim } from "@/hooks/use-username-claims";
 import { resolveTokenImage } from "@/lib/utils";
 
 export default function AppearanceSettingsPage() {
   const { address, isLoading, form, setField, saving, saveStatus, saveError, save } = useProfileForm();
+  const { username } = useMyUsernameClaim();
   const { tokens, isLoading: assetsLoading } = useTokensByOwner(address ?? null, 1, 100);
   const [fastMintOpen, setFastMintOpen] = useState(false);
 
@@ -26,13 +28,19 @@ export default function AppearanceSettingsPage() {
 
   return (
     <SettingsGate>
-      <SettingsPage title="Avatar & theme" subtitle="Pick one of your NFTs. It becomes your avatar and a subtle background theme across Medialane.">
+      <SettingsPage
+        title="Avatar & theme"
+        subtitle="Pick one of your NFTs. It becomes your avatar and a subtle background theme across Medialane."
+        icon={<ImageIcon className="h-4 w-4 text-white" />}
+        aside={
+          <ProfileLivePreview form={form} approvedUsername={username} walletAddress={address} fallbackImage={assets[0]?.image} />
+        }
+      >
         {isLoading ? (
           <Skeleton className="h-40 w-full" />
         ) : (
           <>
-            <div className="space-y-3 rounded-2xl border border-border/60 bg-card p-5">
-              <Label>Your NFTs</Label>
+            <SettingsSection title="Avatar & app theme" description="Images for your profile">
               <AssetPicker
                 assets={assets}
                 isLoading={assetsLoading}
@@ -40,9 +48,9 @@ export default function AppearanceSettingsPage() {
                 onSelect={(asset) => setField("avatarImage", asset.image ?? "")}
                 onMintClick={() => setFastMintOpen(true)}
               />
-            </div>
+            </SettingsSection>
 
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-3 border-t border-border pt-4">
               <Button onClick={save} disabled={saving || !address} className="w-full sm:w-auto">
                 {saving ? (
                   <>

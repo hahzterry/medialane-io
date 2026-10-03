@@ -1,8 +1,9 @@
 "use client";
 
+import { ServiceFormShell } from "@medialane/ui";
 import Link from "next/link";
 import type { ElementType, ReactNode } from "react";
-import { ChevronLeft, ChevronRight, Wallet } from "lucide-react";
+import { ArrowLeft, ChevronRight, Settings as SettingsIcon, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWalletNativeSession } from "@/hooks/use-wallet-native-session";
@@ -11,29 +12,36 @@ import type { RowStatus, RowTone } from "@/lib/settings/rows";
 
 export function SettingsPage({
   title,
-  subtitle,
+  subtitle = "",
+  icon,
+  aside,
   back = true,
   children,
 }: {
   title: string;
   subtitle?: string;
+  icon?: ReactNode;
+  aside?: ReactNode;
   back?: boolean;
   children: ReactNode;
 }) {
   return (
-    <div className="mx-auto w-full max-w-xl space-y-6 px-4 pb-10 pt-20 sm:pt-24">
-      <div className="space-y-2">
-        {back ? (
-          <Link href="/settings" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-            <ChevronLeft className="h-4 w-4" />
-            Settings
+    <ServiceFormShell
+      icon={icon ?? <SettingsIcon className="h-4 w-4 text-white" />}
+      title={title}
+      subtitle={subtitle}
+      aside={aside}
+      backSlot={
+        back ? (
+          <Link href="/settings" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-4 w-4" />
+            Back
           </Link>
-        ) : null}
-        <h1 className="text-2xl font-bold text-foreground">{title}</h1>
-        {subtitle ? <p className="text-sm text-muted-foreground">{subtitle}</p> : null}
-      </div>
+        ) : undefined
+      }
+    >
       {children}
-    </div>
+    </ServiceFormShell>
   );
 }
 
@@ -57,11 +65,36 @@ export function SettingsGate({ children }: { children: ReactNode }) {
   );
 }
 
+export function SettingsSection({
+  icon: Icon,
+  title,
+  description,
+  children,
+}: {
+  icon?: ElementType;
+  title: string;
+  description?: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="space-y-4">
+      <div>
+        <h3 className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+          {Icon ? <Icon className="h-4 w-4" /> : null}
+          {title}
+        </h3>
+        {description ? <p className="mt-0.5 text-xs text-muted-foreground">{description}</p> : null}
+      </div>
+      <div className="space-y-4 border-t border-border pt-4">{children}</div>
+    </section>
+  );
+}
+
 export function SettingsGroup({ label, children }: { label: string; children: ReactNode }) {
   return (
     <section className="space-y-2">
-      <h2 className="px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</h2>
-      <div className="divide-y divide-border/60 overflow-hidden rounded-2xl border border-border/60 bg-card">{children}</div>
+      <h3 className="text-sm font-semibold text-foreground">{label}</h3>
+      <div className="divide-y divide-border border-y border-border">{children}</div>
     </section>
   );
 }
@@ -84,7 +117,7 @@ export function SettingsRow({
   status?: RowStatus | null;
 }) {
   return (
-    <Link href={href} className="flex min-h-14 items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/40 active:bg-muted/60">
+    <Link href={href} className="flex min-h-14 items-center gap-3 py-3 transition-colors hover:text-primary">
       <Icon className="h-5 w-5 shrink-0 text-muted-foreground" />
       <span className="flex-1 text-sm font-medium text-foreground">{label}</span>
       {status === undefined ? null : status === null ? (
