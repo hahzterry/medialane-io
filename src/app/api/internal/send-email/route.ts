@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import nodemailer from "nodemailer";
-import { isRelayAuthorized, parseRelayEmail } from "@/lib/mail-relay";
+import { isRelayAuthorized, parseRelayRequest } from "@/lib/mail-relay";
+import { APP_URL } from "@/lib/seo";
 
 export const runtime = "nodejs";
 
@@ -11,7 +12,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const email = parseRelayEmail(await req.json().catch(() => null));
+  const email = parseRelayRequest(await req.json().catch(() => null), APP_URL);
   if (!email) return NextResponse.json({ error: "Invalid email" }, { status: 400 });
 
   if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
