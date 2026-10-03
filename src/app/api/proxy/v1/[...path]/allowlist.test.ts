@@ -106,6 +106,10 @@ test("POST /v1/auth/email/request-code and /verify-code are allowed", () => {
   expect(isPathAllowed("POST", "auth/email/verify-code")).toBe(true);
 });
 
+test("POST /v1/auth/email/confirm is allowed", () => {
+  expect(isPathAllowed("POST", "auth/email/confirm")).toBe(true);
+});
+
 test("POST /v1/auth/email/something-else is rejected", () => {
   expect(isPathAllowed("POST", "auth/email/something-else")).toBe(false);
 });
