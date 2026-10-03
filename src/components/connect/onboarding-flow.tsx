@@ -20,6 +20,7 @@ import { createOwnerKey } from "@/lib/wallet/passkey";
 import { removeDevice } from "@/lib/wallet/devices";
 import { RESEND_COOLDOWN_SECONDS } from "@/lib/email-code";
 import { loadSealedOwner, saveSealedOwner, notifyWalletChange } from "@/lib/wallet/store";
+import { afterCodeVerified, afterEmailCheck, afterRegister } from "@/lib/onboarding/decisions";
 
 export type OnboardingStep =
   | "email"
@@ -189,15 +190,17 @@ export function OnboardingFlow({ start = "email", onDone, autoStartWallet = true
   const registerNewAccount = async () => {
     setStep("registering");
     try {
+      let outcome: "created" | "already-exists" = "created";
       try {
         await getMedialaneClient().api.registerEmailAccount(email);
       } catch (err) {
-        if (err instanceof MedialaneApiError && err.status === 409) {
-          accountExistedRef.current = true;
-          await requestLoginCode();
-          return;
-        }
-        throw err;
+        if (err instanceof MedialaneApiError && err.status === 409) outcome = "already-exists";
+        else throw err;
+      }
+      if (afterRegister(outcome) === "send-code") {
+        accountExistedRef.current = true;
+        await requestLoginCode();
+        return;
       }
       saveAccountEmail(email);
       await runWalletSetup();
@@ -213,7 +216,7 @@ export function OnboardingFlow({ start = "email", onDone, autoStartWallet = true
     try {
       const { exists } = await getMedialaneClient().api.checkEmail(email);
       accountExistedRef.current = exists;
-      if (exists) await requestLoginCode();
+      if (afterEmailCheck(exists) === "send-code") await requestLoginCode();
       else await registerNewAccount();
     } catch {
       setError("Something went wrong. Please try again.");
@@ -243,11 +246,12 @@ export function OnboardingFlow({ start = "email", onDone, autoStartWallet = true
       await getMedialaneClient().api.verifyEmailCode(email, codeToVerify);
       saveAccountEmail(email);
       const wallet = accountExistedRef.current ? await adoptSessionWallet(getMedialaneClient().api, saveAccountAddress) : null;
-      if (wallet?.needsKeySetup) {
-        await runKeySetup(wallet.walletAddress);
+      const next = afterCodeVerified(wallet);
+      if (next.type === "key-setup") {
+        await runKeySetup(next.walletAddress);
         return;
       }
-      if (wallet) {
+      if (next.type === "finish") {
         finish();
         return;
       }
