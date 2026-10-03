@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { AtSign } from "lucide-react";
 import { canonical } from "@/lib/seo";
 import { ClaimRouteShell } from "@/components/claim/claim-route-shell";
-import { UsernameClaimPanel } from "@/components/shared/username-claim-panel";
+import { ClaimGate } from "@/components/claim/claim-gate";
+import { UsernameClaimSection } from "@/components/settings/username-claim-section";
 import { ClaimUsernameAside } from "@/components/claim/claim-username-aside";
 
 export const metadata: Metadata = {
@@ -26,7 +27,9 @@ export default function ClaimUsernamePage() {
       subtitle="Reserve your creator URL at medialane.io/creator/yourname."
       aside={<ClaimUsernameAside />}
     >
-      <UsernameClaimPanel bare />
+      <ClaimGate>
+        <UsernameClaimSection />
+      </ClaimGate>
     </ClaimRouteShell>
   );
 }

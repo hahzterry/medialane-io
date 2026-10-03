@@ -26,6 +26,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/claim/collection`, changeFrequency: "weekly", priority: 0.5 },
     { url: `${BASE_URL}/claim/username`, changeFrequency: "weekly", priority: 0.5 },
     { url: `${BASE_URL}/claim/collection-name`, changeFrequency: "weekly", priority: 0.5 },
+    { url: `${BASE_URL}/claim/memecoin`, changeFrequency: "weekly", priority: 0.5 },
     { url: `${BASE_URL}/activities`, changeFrequency: "hourly", priority: 0.6 },
   ];
 

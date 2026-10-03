@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { FolderInput, Globe } from "lucide-react";
 import { canonical } from "@/lib/seo";
 import { ClaimRouteShell } from "@/components/claim/claim-route-shell";
+import { ClaimGate } from "@/components/claim/claim-gate";
 import { ClaimCollectionPanel } from "@/components/claim/claim-collection-panel";
 import { ClaimCollectionAside } from "@/components/claim/claim-collection-aside";
 
@@ -22,7 +23,7 @@ export const metadata: Metadata = {
 const urlPill = (
   <div className="flex items-center gap-2 rounded-lg border border-border bg-background/60 px-3 py-2 max-w-full">
     <Globe className="h-4 w-4 text-muted-foreground shrink-0" />
-    <span className="tabular-nums text-sm text-foreground/90 truncate">medialane.io/collections/your-collection</span>
+    <span className="tabular-nums text-sm text-foreground/90 truncate">medialane.io/collection/your-collection</span>
   </div>
 );
 
@@ -35,7 +36,9 @@ export default function ClaimCollectionPage() {
       headerAccessory={urlPill}
       aside={<ClaimCollectionAside />}
     >
-      <ClaimCollectionPanel helperText="Paste the Starknet ERC-721 contract address you own — we verify ownership on-chain before it goes live." />
+      <ClaimGate>
+        <ClaimCollectionPanel helperText="Paste the Starknet ERC-721 contract address you own — we verify ownership on-chain before it goes live." />
+      </ClaimGate>
     </ClaimRouteShell>
   );
 }

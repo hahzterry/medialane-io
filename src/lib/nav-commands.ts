@@ -50,7 +50,7 @@ export const NAV_COMMANDS: NavCommandGroup[] = [
       { id: "sponsorship-create",   label: "Create IP Sponsorship",        icon: Handshake, href: "/launchpad/sponsorship/create", keywords: ["sponsorship", "sponsor", "license", "offer", "deal"] },
       { id: "sponsorship-browse",   label: "Browse IP Sponsorship",        icon: Handshake, href: "/launchpad/sponsorship",        keywords: ["sponsorship", "browse", "offers"] },
       { id: "launch-coin",          label: "Launch a Creator Coin",        icon: Coins,    href: "/launchpad/coin/create",        keywords: ["coin", "creator coin", "erc20", "token", "ekubo", "liquidity", "launch"] },
-      { id: "claim-memecoin",       label: "Claim a Memecoin",             icon: Coins,    href: "/launchpad/memecoin",           keywords: ["memecoin", "claim", "coin", "starknet", "unrug", "token"] },
+      { id: "claim-memecoin",       label: "Claim a Memecoin",             icon: Coins,    href: "/claim/memecoin",           keywords: ["memecoin", "claim", "coin", "starknet", "unrug", "token"] },
       { id: "remix",                label: "Remix an Asset",               icon: Repeat2,  href: "/marketplace",                  keywords: ["remix", "derivative", "attribution", "fork"] },
     ],
   },

@@ -24,5 +24,5 @@ export function claimDefinitions(all: readonly ServiceDefinition[]): ServiceDefi
 }
 
 export function claimOverrides(base: ServiceOverrides): ServiceOverrides {
-  return { ...base, [AIRDROP_CLAIM.key]: { href: "/airdrop" } };
+  return { ...base, [AIRDROP_CLAIM.key]: { href: "/airdrop" }, "claim-memecoin": { href: "/claim/memecoin" } };
 }

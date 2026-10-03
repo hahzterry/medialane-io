@@ -18,7 +18,7 @@ export function CoinsMount({ heading = true }: { heading?: boolean }) {
       action={
         <div className="flex items-center gap-2">
           <Button asChild variant="outline">
-            <Link href="/launchpad/memecoin">Claim a coin</Link>
+            <Link href="/claim/memecoin">Claim a coin</Link>
           </Button>
           <GradientButton
             wrapperClassName="w-auto shrink-0"

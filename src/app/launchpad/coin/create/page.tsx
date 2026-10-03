@@ -445,7 +445,7 @@ export default function CoinCreatePage() {
                 {action.status !== "idle" ? <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> Launching…</> : <>Launch your coin <ArrowRight className="h-4 w-4 ml-1.5" /></>}
               </GradientButton>
               <p className="text-xs text-muted-foreground text-center">
-                <Link href="/launchpad/memecoin" className="underline active:text-foreground">
+                <Link href="/claim/memecoin" className="underline active:text-foreground">
                   Already launched a coin? Claim it instead.
                 </Link>
               </p>

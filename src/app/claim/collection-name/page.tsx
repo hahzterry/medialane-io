@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Link2 } from "lucide-react";
 import { canonical } from "@/lib/seo";
 import { ClaimRouteShell } from "@/components/claim/claim-route-shell";
+import { ClaimGate } from "@/components/claim/claim-gate";
 import { CollectionNameClaim } from "@/components/claim/collection-name-claim";
 import { ClaimCollectionNameAside } from "@/components/claim/claim-collection-name-aside";
 
@@ -26,7 +27,9 @@ export default function ClaimCollectionNamePage() {
       subtitle="Pick a collection to give it a clean, memorable URL — medialane.io/collection/your-name."
       aside={<ClaimCollectionNameAside />}
     >
-      <CollectionNameClaim />
+      <ClaimGate>
+        <CollectionNameClaim />
+      </ClaimGate>
     </ClaimRouteShell>
   );
 }

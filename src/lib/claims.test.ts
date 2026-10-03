@@ -27,6 +27,10 @@ describe("the cards on the claims page", () => {
     expect(cards.every((c) => c.group === "claims")).toBe(true);
   });
 
+  test("the memecoin claim lives with the other claims", () => {
+    expect(overrides["claim-memecoin"]?.href).toBe("/claim/memecoin");
+  });
+
   test("the airdrop card opens the airdrop page", () => {
     expect(overrides[AIRDROP_CLAIM.key]?.href).toBe("/airdrop");
   });
