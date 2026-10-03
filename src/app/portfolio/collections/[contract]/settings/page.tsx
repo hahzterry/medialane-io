@@ -259,7 +259,7 @@ function CollectionSlugClaimSection({
             {submitError === "Verify your email to claim a collection." && (
               <>
                 {" "}
-                <Link href="/settings?tab=account" className="underline font-medium hover:text-foreground">
+                <Link href="/settings/email" className="underline font-medium hover:text-foreground">
                   Verify email
                 </Link>
               </>
