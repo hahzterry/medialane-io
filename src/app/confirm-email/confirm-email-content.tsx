@@ -1,19 +1,26 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { CheckCircle2, Loader2, MailWarning, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getMedialaneClient } from "@/lib/medialane-client";
-import { confirmEmailOutcome } from "@/lib/confirm-email";
+import { confirmEmailOutcome, readConfirmToken } from "@/lib/confirm-email";
 
 type Step = "ready" | "confirming" | "confirmed" | "invalid";
 
 export default function ConfirmEmailContent() {
   const router = useRouter();
-  const token = useSearchParams().get("token");
-  const [step, setStep] = useState<Step>(token ? "ready" : "invalid");
+  const [token, setToken] = useState<string | null>(null);
+  const [step, setStep] = useState<Step>("confirming");
+
+  useEffect(() => {
+    const found = readConfirmToken(window.location.search, window.location.hash);
+    setToken(found);
+    setStep(found ? "ready" : "invalid");
+    if (found) window.history.replaceState(null, "", window.location.pathname);
+  }, []);
 
   const confirm = async () => {
     if (!token) return;
