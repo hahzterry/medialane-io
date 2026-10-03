@@ -13,6 +13,7 @@ import {
   type ServiceOverrides,
 } from "@medialane/ui";
 import { FastMint } from "@/components/launchpad/fast-mint";
+import { SHARED_CLAIM_KEYS } from "@/lib/claims";
 
 export function LaunchpadContent() {
   const { address: walletAddress } = useWalletNativeSession();
@@ -47,13 +48,14 @@ export function LaunchpadContent() {
           <LaunchpadFilterBar
             query={filter.query}
             onQueryChange={filter.setQuery}
-            groups={filter.filterableGroups}
+            groups={filter.filterableGroups.filter((g) => g.key !== "claims")}
             activeGroups={filter.activeGroups}
             onToggleGroup={filter.toggleGroup}
           />
         </FadeIn>
         <LaunchpadGroupedSections
           overrides={overrides}
+          excludeKeys={[...SHARED_CLAIM_KEYS]}
           query={filter.query}
           activeGroups={filter.activeGroups}
           onClearFilters={filter.clear}

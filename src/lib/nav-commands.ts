@@ -27,6 +27,7 @@ export const NAV_COMMANDS: NavCommandGroup[] = [
       { id: "activities",  label: "Activity",     icon: Activity,   href: "/activities",  keywords: ["history", "transactions", "feed", "events"] },
       { id: "rewards",     label: "Rewards",      icon: Trophy,     href: "/rewards",     keywords: ["xp", "points", "scoreboard", "leaderboard", "badges", "rank"] },
       { id: "airdrop",     label: "Airdrop",      icon: Gift,       href: "/airdrop",     keywords: ["claim", "free", "drop", "genesis"] },
+      { id: "claims",      label: "Claims",       icon: FolderInput, href: "/claim",      keywords: ["username", "reserve", "import", "collection name", "memecoin"] },
       { id: "search",      label: "Search",       icon: Search,     href: "/search",      keywords: ["find", "lookup", "query"] },
       { id: "settings",    label: "Account Settings", icon: Settings, href: "/settings",  keywords: ["profile", "username", "preferences", "account"] },
     ],

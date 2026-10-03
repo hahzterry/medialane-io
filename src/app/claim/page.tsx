@@ -3,14 +3,12 @@ import { ClaimPageClient } from "./claim-page-client";
 import { canonical } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  title: "Claims & Drops — Medialane",
-  description:
-    "Claim your Genesis NFT, import your Starknet collection, or reserve your creator username on Medialane.",
+  title: "Claims — Medialane",
+  description: "Reserve your username, bring in a collection or a coin, or join the Creator's Airdrop on Medialane.",
   alternates: canonical("/claim"),
   openGraph: {
-    title: "Claims & Drops — Medialane",
-    description:
-      "Claim your Genesis NFT, import your Starknet collection, or reserve your creator username on Medialane.",
+    title: "Claims — Medialane",
+    description: "Reserve your username, bring in a collection or a coin, or join the Creator's Airdrop on Medialane.",
     type: "website",
     url: "/claim",
   },
