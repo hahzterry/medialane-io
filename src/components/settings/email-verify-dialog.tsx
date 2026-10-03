@@ -1,23 +1,10 @@
 "use client";
 
-import { describeError } from "@medialane/ui";
-import { useEffect, useRef, useState } from "react";
-import { Mail, ShieldCheck, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { getMedialaneClient } from "@/lib/medialane-client";
-
-type Step = "sending" | "code" | "verifying" | "success" | "error";
-
-const RESEND_COOLDOWN_S = 30;
+import { useEffect, useState } from "react";
+import { Mail, CheckCircle2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { EmailCodeEntry } from "@/components/connect/email-code-entry";
+import { useEmailCode } from "@/hooks/use-email-code";
 
 interface EmailVerifyDialogProps {
   open: boolean;
@@ -28,137 +15,40 @@ interface EmailVerifyDialogProps {
 }
 
 export function EmailVerifyDialog({ open, onOpenChange, email, onVerified, skipInitialSend }: EmailVerifyDialogProps) {
-  const [step, setStep] = useState<Step>("sending");
-  const [code, setCode] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [cooldown, setCooldown] = useState(0);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const sendCode = async () => {
-    setStep("sending");
-    setError(null);
-    try {
-      await getMedialaneClient().api.requestEmailCode(email);
-      setStep("code");
-      setCooldown(RESEND_COOLDOWN_S);
-      setTimeout(() => inputRef.current?.focus(), 50);
-    } catch (err) {
-      setError(describeError(err, "Couldn't send the code. Please try again.").message);
-      setStep("error");
-    }
-  };
+  const emailCode = useEmailCode(email);
+  const [verified, setVerified] = useState(false);
+  const { send, markReady, setCode } = emailCode;
 
   useEffect(() => {
     if (!open) return;
+    setVerified(false);
     setCode("");
-    if (skipInitialSend) {
-      setError(null);
-      setStep("code");
-      setCooldown(RESEND_COOLDOWN_S);
-      setTimeout(() => inputRef.current?.focus(), 50);
-      return;
-    }
-    void sendCode();
-    
+    if (skipInitialSend) markReady();
+    else void send();
   }, [open]);
 
-  useEffect(() => {
-    if (cooldown <= 0) return;
-    const t = setTimeout(() => setCooldown((c) => c - 1), 1000);
-    return () => clearTimeout(t);
-  }, [cooldown]);
-
-  const verify = async () => {
-    setStep("verifying");
-    setError(null);
-    try {
-      await getMedialaneClient().api.verifyEmailCode(email, code);
-      await onVerified();
-      setStep("success");
-      setTimeout(() => onOpenChange(false), 1200);
-    } catch (err) {
-      setError(describeError(err, "Incorrect code. Please try again.").message);
-      setCode("");
-      setStep("code");
-      setTimeout(() => inputRef.current?.focus(), 50);
-    }
+  const verify = async (code?: string) => {
+    const ok = await emailCode.verify({ code, after: onVerified });
+    if (!ok) return;
+    setVerified(true);
+    setTimeout(() => onOpenChange(false), 1200);
   };
 
   return (
-    <Dialog open={open} onOpenChange={(next) => step !== "verifying" && onOpenChange(next)}>
+    <Dialog open={open} onOpenChange={(next) => emailCode.state.status !== "verifying" && onOpenChange(next)}>
       <DialogContent className="sm:max-w-sm">
-        <DialogHeader className="text-center items-center">
-          <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
-            {step === "success" ? (
-              <CheckCircle2 className="h-6 w-6 text-emerald-500" />
-            ) : (
-              <Mail className="h-6 w-6 text-primary" />
-            )}
+        <DialogHeader className="items-center text-center">
+          <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+            {verified ? <CheckCircle2 className="h-6 w-6 text-emerald-500" /> : <Mail className="h-6 w-6 text-primary" />}
           </div>
-          <DialogTitle>
-            {step === "success" ? "You're all set" : "Verify your email"}
-          </DialogTitle>
+          <DialogTitle>{verified ? "You're all set" : "Verify your email"}</DialogTitle>
           <DialogDescription>
-            {step === "success"
+            {verified
               ? "Your email is confirmed. Your account is fully unrestricted."
               : `Enter the 6-digit code we sent to ${email}.`}
           </DialogDescription>
         </DialogHeader>
-
-        <div className="flex flex-col items-center gap-4">
-          {error && (
-            <Alert variant="destructive" className="w-full">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
-          {step === "sending" && (
-            <div className="flex w-full items-center justify-center gap-2 py-2.5 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Sending code…
-            </div>
-          )}
-
-          {(step === "code" || step === "verifying") && (
-            <>
-              <Input
-                ref={inputRef}
-                type="text"
-                inputMode="numeric"
-                maxLength={6}
-                placeholder="000000"
-                value={code}
-                onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-                disabled={step === "verifying"}
-                className="w-full text-center text-lg tracking-[0.5em]"
-              />
-              <Button
-                className="w-full gap-2"
-                onClick={verify}
-                disabled={step === "verifying" || code.length !== 6}
-              >
-                {step === "verifying" ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-                Verify
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={sendCode}
-                disabled={cooldown > 0 || step === "verifying"}
-                className="text-xs text-muted-foreground"
-              >
-                {cooldown > 0 ? `Resend code in ${cooldown}s` : "Resend code"}
-              </Button>
-            </>
-          )}
-
-          {step === "error" && (
-            <Button className="w-full" onClick={sendCode}>
-              Try again
-            </Button>
-          )}
-        </div>
+        {verified ? null : <EmailCodeEntry emailCode={emailCode} onVerify={(code) => void verify(code)} />}
       </DialogContent>
     </Dialog>
   );

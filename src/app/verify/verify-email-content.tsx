@@ -10,13 +10,12 @@ import { getMedialaneClient } from "@/lib/medialane-client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { EmailCodeEntry } from "@/components/connect/email-code-entry";
+import { useEmailCode } from "@/hooks/use-email-code";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { saveAccountEmail } from "@/lib/wallet/account-wallet";
 
-const RESEND_COOLDOWN_S = 30;
-
-type Step = "loading" | "add-email" | "sending" | "code" | "verifying" | "verified";
+type Step = "loading" | "add-email" | "code" | "verified";
 
 export default function VerifyEmailContent() {
   const router = useRouter();
@@ -26,9 +25,8 @@ export default function VerifyEmailContent() {
   const [step, setStep] = useState<Step>("loading");
   const [email, setEmail] = useState<string | null>(null);
   const [emailInput, setEmailInput] = useState("");
-  const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [cooldown, setCooldown] = useState(0);
+  const emailCode = useEmailCode(email);
 
   useEffect(() => {
     if (!walletAddress) return;
@@ -41,32 +39,14 @@ export default function VerifyEmailContent() {
         setStep("verified");
       } else if (result?.email) {
         setEmail(result.email);
-        void sendCode(result.email);
+        setStep("code");
+        void emailCode.send(result.email);
       } else {
         setStep("add-email");
       }
     })();
     
   }, [walletAddress]);
-
-  async function sendCode(forEmail: string) {
-    setStep("sending");
-    setError(null);
-    try {
-      await getMedialaneClient().api.requestEmailCode(forEmail);
-      setStep("code");
-      setCooldown(RESEND_COOLDOWN_S);
-    } catch (err) {
-      setError(describeError(err, "Couldn't send the code. Please try again.").message);
-      setStep("code");
-    }
-  }
-
-  useEffect(() => {
-    if (cooldown <= 0) return;
-    const t = setTimeout(() => setCooldown((c) => c - 1), 1000);
-    return () => clearTimeout(t);
-  }, [cooldown]);
 
   async function handleAddEmail() {
     const value = emailInput.trim();
@@ -78,26 +58,16 @@ export default function VerifyEmailContent() {
       const result = await getMedialaneClient().api.changeMyEmail(value, token);
       saveAccountEmail(value);
       setEmail(result.email);
-      void sendCode(result.email);
+      setStep("code");
+      void emailCode.send(result.email);
     } catch (err) {
       setError(describeError(err, "Failed to save email").message);
     }
   }
 
-  async function handleVerify(codeOverride?: string) {
-    const codeToVerify = codeOverride ?? code;
-    if (!email || codeToVerify.length !== 6) return;
-    setStep("verifying");
-    setError(null);
-    try {
-      await getMedialaneClient().api.verifyEmailCode(email, codeToVerify);
-      setStep("verified");
-    } catch (err) {
-      setError(describeError(err, "Incorrect code. Please try again.").message);
-      setCode("");
-      setStep("code");
-    }
-  }
+  const handleVerify = async (code?: string) => {
+    if (await emailCode.verify({ code })) setStep("verified");
+  };
 
   if (!hasWallet || step === "loading") {
     return (
@@ -205,65 +175,10 @@ export default function VerifyEmailContent() {
             </div>
           </div>
           <CardTitle>Verify your email</CardTitle>
-          <CardDescription>
-            {step === "sending" ? `Sending a code to ${email}…` : `Enter the 6-digit code we sent to ${email}.`}
-          </CardDescription>
+          <CardDescription>Enter the 6-digit code we sent to {email}.</CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col items-center gap-4">
-          {error && (
-            <Alert variant="destructive" className="w-full">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-          {step === "sending" ? (
-            <div className="flex items-center gap-2 py-2.5 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Sending code…
-            </div>
-          ) : (
-            <>
-              <InputOTP
-                maxLength={6}
-                value={code}
-                onChange={(value) => setCode(value.replace(/\D/g, ""))}
-                onComplete={(value) => void handleVerify(value)}
-                disabled={step === "verifying"}
-              >
-                <InputOTPGroup>
-                  {[0, 1, 2, 3, 4, 5].map((i) => (
-                    <InputOTPSlot key={i} index={i} className="h-12 w-11 text-lg font-semibold" />
-                  ))}
-                </InputOTPGroup>
-              </InputOTP>
-              <div className="btn-border-animated w-full rounded-lg p-[1px]">
-                <Button
-                  className="w-full gap-2 rounded-[7px] bg-transparent text-white transition-all hover:bg-transparent hover:brightness-110 active:scale-[0.98]"
-                  size="lg"
-                  onClick={() => void handleVerify()}
-                  disabled={step === "verifying" || code.length !== 6}
-                >
-                  {step === "verifying" ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                  Verify
-                </Button>
-              </div>
-              <p className="text-center text-xs leading-relaxed text-muted-foreground">
-                Didn&apos;t receive it? Check your spam, or{" "}
-                {cooldown > 0 ? (
-                  <span>resend in {cooldown}s</span>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => email && void sendCode(email)}
-                    className="underline underline-offset-2 hover:text-foreground"
-                  >
-                    resend the code
-                  </button>
-                )}
-                .
-              </p>
-            </>
-          )}
+        <CardContent>
+          <EmailCodeEntry emailCode={emailCode} onVerify={(code) => void handleVerify(code)} />
         </CardContent>
       </Card>
     </div>

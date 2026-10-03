@@ -18,6 +18,7 @@ import { mediaWallet } from "@/lib/wallet/client";
 import { adoptSessionWallet, claimSessionWallet } from "@medialane/sdk/starknet";
 import { createOwnerKey } from "@/lib/wallet/passkey";
 import { removeDevice } from "@/lib/wallet/devices";
+import { RESEND_COOLDOWN_SECONDS } from "@/lib/email-code";
 import { loadSealedOwner, saveSealedOwner, notifyWalletChange } from "@/lib/wallet/store";
 
 export type OnboardingStep =
@@ -32,7 +33,7 @@ export type OnboardingStep =
   | "signing-in"
   | "done";
 
-export const RESEND_COOLDOWN_SECONDS = 60;
+export { RESEND_COOLDOWN_SECONDS };
 
 const WALLET_STEPS: OnboardingStep[] = ["creating-passkey", "deploying", "signing-in"];
 
