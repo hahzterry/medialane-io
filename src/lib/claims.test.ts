@@ -23,6 +23,10 @@ describe("the cards on the claims page", () => {
     }
   });
 
+  test("all share the claims group, so every card has the same colour, including the memecoin claim", () => {
+    expect(cards.every((c) => c.group === "claims")).toBe(true);
+  });
+
   test("the airdrop card opens the airdrop page", () => {
     expect(overrides[AIRDROP_CLAIM.key]?.href).toBe("/airdrop");
   });
