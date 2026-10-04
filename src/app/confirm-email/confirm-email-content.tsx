@@ -1,37 +1,43 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, Loader2, MailWarning, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Loader2, MailWarning } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getMedialaneClient } from "@/lib/medialane-client";
 import { confirmEmailOutcome, readConfirmToken } from "@/lib/confirm-email";
 
-type Step = "ready" | "confirming" | "confirmed" | "invalid";
+type Step = "confirming" | "confirmed" | "invalid";
+
+const REDIRECT_DELAY_MS = 2000;
 
 export default function ConfirmEmailContent() {
   const router = useRouter();
-  const [token, setToken] = useState<string | null>(null);
   const [step, setStep] = useState<Step>("confirming");
+  const started = useRef(false);
 
   useEffect(() => {
-    const found = readConfirmToken(window.location.search, window.location.hash);
-    setToken(found);
-    setStep(found ? "ready" : "invalid");
-    if (found) window.history.replaceState(null, "", window.location.pathname);
+    if (started.current) return;
+    started.current = true;
+    const token = readConfirmToken(window.location.search, window.location.hash);
+    if (!token) {
+      setStep("invalid");
+      return;
+    }
+    window.history.replaceState(null, "", window.location.pathname);
+    void confirmEmailOutcome(() => getMedialaneClient().api.confirmEmail(token)).then(setStep);
   }, []);
 
-  const confirm = async () => {
-    if (!token) return;
-    setStep("confirming");
-    setStep(await confirmEmailOutcome(() => getMedialaneClient().api.confirmEmail(token)));
-  };
+  useEffect(() => {
+    if (step !== "confirmed") return;
+    const timer = setTimeout(() => router.push("/"), REDIRECT_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [step, router]);
 
   const view = {
-    ready: { icon: <ShieldCheck className="h-6 w-6 text-primary" />, title: "Confirm your email", body: "One click and your account is fully unrestricted." },
-    confirming: { icon: <Loader2 className="h-6 w-6 animate-spin text-primary" />, title: "Confirming…", body: "" },
-    confirmed: { icon: <CheckCircle2 className="h-6 w-6 text-emerald-500" />, title: "You're all set", body: "Your email is confirmed. Your account is fully unrestricted." },
+    confirming: { icon: <Loader2 className="h-6 w-6 animate-spin text-primary" />, title: "Confirming your email…", body: "" },
+    confirmed: { icon: <CheckCircle2 className="h-6 w-6 text-emerald-500" />, title: "You're all set", body: "Your email is confirmed. Taking you to Medialane…" },
     invalid: { icon: <MailWarning className="h-6 w-6 text-primary" />, title: "This link has expired", body: "Please sign up again to get a new one." },
   }[step];
 
@@ -46,11 +52,6 @@ export default function ConfirmEmailContent() {
           {view.body ? <CardDescription>{view.body}</CardDescription> : null}
         </CardHeader>
         <CardContent>
-          {step === "ready" ? (
-            <Button size="lg" className="w-full" onClick={() => void confirm()}>
-              Confirm my email
-            </Button>
-          ) : null}
           {step === "confirmed" ? (
             <Button size="lg" className="w-full" onClick={() => router.push("/")}>
               Go to Medialane
