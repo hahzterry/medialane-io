@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GradientButton } from "@medialane/ui";
-import { EXPLORER_URL, MINT_CONTRACT, GENESIS_NFT_CID, MINT_NFT_IMAGE_URL } from "@/lib/constants";
+import { EXPLORER_URL, MINT_CONTRACT, GENESIS_NFT_URI, MINT_NFT_IMAGE_URL } from "@/lib/constants";
 import type { Call } from "starknet";
 
 export function AirdropEventCard() {
@@ -79,7 +79,7 @@ export function GenesisMint() {
       if (!MINT_CONTRACT) throw new UserFacingError("Airdrop has not started yet.");
 
       setMintStatusMsg("Confirming participation…");
-      const calldata = [walletAddress, ...serializeByteArray(GENESIS_NFT_CID)];
+      const calldata = [walletAddress, ...serializeByteArray(GENESIS_NFT_URI)];
 
       return signer.execute([
         { contractAddress: MINT_CONTRACT, entrypoint: "mint_item", calldata },

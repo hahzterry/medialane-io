@@ -16,7 +16,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { EXPLORER_URL, MINT_CONTRACT, GENESIS_NFT_CID } from "@/lib/constants";
+import { EXPLORER_URL, MINT_CONTRACT, GENESIS_NFT_URI } from "@/lib/constants";
 import type { Call } from "starknet";
 
 type MintStep = "ready" | "minting" | "success" | "error";
@@ -48,7 +48,7 @@ export function GenesisMint() {
       if (!MINT_CONTRACT) throw new UserFacingError("Distribuição não iniciada ainda.");
 
       setMintStatusMsg("Confirmando participação…");
-      const calldata = [walletAddress, ...serializeByteArray(GENESIS_NFT_CID)];
+      const calldata = [walletAddress, ...serializeByteArray(GENESIS_NFT_URI)];
 
       return signer.execute([
         { contractAddress: MINT_CONTRACT, entrypoint: "mint_item", calldata },

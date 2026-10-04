@@ -23,7 +23,7 @@ import { Button } from "@/components/ui/button";
 import {
   EXPLORER_URL,
   MINT_CONTRACT,
-  GENESIS_NFT_CID,
+  GENESIS_NFT_URI,
 } from "@/lib/constants";
 import { LaunchCountdown } from "./launch-countdown";
 import type { Call } from "starknet";
@@ -107,7 +107,7 @@ export function LaunchMint() {
       if (!MINT_CONTRACT) throw new Error("Mint contract not configured.");
 
       setMintStatusMsg("Submitting transaction…");
-      const calldata = [recipientAddress, ...serializeByteArray(GENESIS_NFT_CID)];
+      const calldata = [recipientAddress, ...serializeByteArray(GENESIS_NFT_URI)];
 
       return signer.execute([
         { contractAddress: MINT_CONTRACT, entrypoint: "mint_item", calldata },
