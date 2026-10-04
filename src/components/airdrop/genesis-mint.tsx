@@ -79,11 +79,7 @@ export function GenesisMint() {
       if (!walletAddress) throw new UserFacingError("Account not found. Please try again.");
       if (!MINT_CONTRACT) throw new UserFacingError("Airdrop has not started yet.");
 
-      let tokenUri = MINT_NFT_URI
-        ? MINT_NFT_URI.startsWith("ipfs://") || MINT_NFT_URI.startsWith("ar://")
-          ? MINT_NFT_URI
-          : `ipfs://${MINT_NFT_URI}`
-        : "";
+      let tokenUri = MINT_NFT_URI.replace(/^ipfs:\/\//, "");
       if (!tokenUri) {
         setMintStatusMsg("Registering your participation…");
         const pinned = await pinAssetMetadata({
@@ -92,7 +88,7 @@ export function GenesisMint() {
           externalUrl: "https://medialane.io/mint",
           creator: walletAddress,
         });
-        tokenUri = pinned.uri;
+        tokenUri = pinned.uri.replace(/^ipfs:\/\//, "");
       }
 
       setMintStatusMsg("Confirming participation…");
