@@ -7,7 +7,7 @@ import Image from "next/image";
 import { OnboardingFlow } from "@/components/connect/onboarding-flow";
 import { useWalletNativeSession } from "@/hooks/use-wallet-native-session";
 import { useWalletWriteAction } from "@/hooks/use-wallet-write-action";
-import { serializeByteArray } from "@/lib/cairo-calldata";
+import { genesisMintCall } from "@/lib/genesis-mint-call";
 import {
   Sparkles,
   ExternalLink,
@@ -19,12 +19,11 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GradientButton } from "@medialane/ui";
-import { EXPLORER_URL, MINT_CONTRACT, GENESIS_NFT_URI, MINT_NFT_IMAGE_URL } from "@/lib/constants";
-import type { Call } from "starknet";
+import { EXPLORER_URL, MINT_CONTRACT } from "@/lib/constants";
 
 export function AirdropEventCard() {
   const [errored, setErrored] = useState(false);
-  const src = MINT_NFT_IMAGE_URL || "/genesis.jpg";
+  const src = "/genesis.jpg";
   return (
     <div className="relative rounded-[28px] p-[2px] bg-gradient-to-br from-brand-blue via-brand-purple to-brand-orange shadow-2xl shadow-brand-purple/10">
       <div className="relative rounded-[26px] overflow-hidden aspect-square w-full bg-card">
@@ -79,11 +78,7 @@ export function GenesisMint() {
       if (!MINT_CONTRACT) throw new UserFacingError("Airdrop has not started yet.");
 
       setMintStatusMsg("Confirming participation…");
-      const calldata = [walletAddress, ...serializeByteArray(GENESIS_NFT_URI)];
-
-      return signer.execute([
-        { contractAddress: MINT_CONTRACT, entrypoint: "mint_item", calldata },
-      ] as Call[]);
+      return signer.execute([genesisMintCall(walletAddress)]);
     });
   }, [walletAddress, action]);
 

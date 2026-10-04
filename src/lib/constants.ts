@@ -41,11 +41,6 @@ export const IPFS_GATEWAY = (() => {
 export const EXPLORER_URL =
   readStringEnv(process.env.NEXT_PUBLIC_EXPLORER_URL, "https://voyager.online");
 
-export const GENESIS_NFT_IMAGE_URL =
-  readStringEnv(process.env.NEXT_PUBLIC_GENESIS_NFT_IMAGE_URL);
-
-export const MINT_NFT_IMAGE_URL =
-  readStringEnv(process.env.NEXT_PUBLIC_MINT_NFT_IMAGE_URL);
 
 
 export const DURATION_OPTIONS = [

@@ -5,7 +5,7 @@ import { useState, useCallback, useEffect } from "react";
 import Image from "next/image";
 import { useWalletNativeSession } from "@/hooks/use-wallet-native-session";
 import { useWalletWriteAction } from "@/hooks/use-wallet-write-action";
-import { serializeByteArray } from "@/lib/cairo-calldata";
+import { genesisMintCall } from "@/lib/genesis-mint-call";
 import {
   Sparkles,
   Zap,
@@ -20,13 +20,8 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  EXPLORER_URL,
-  MINT_CONTRACT,
-  GENESIS_NFT_URI,
-} from "@/lib/constants";
+import { EXPLORER_URL, MINT_CONTRACT } from "@/lib/constants";
 import { LaunchCountdown } from "./launch-countdown";
-import type { Call } from "starknet";
 
 function GenesisNftCard({ minted = false }: { minted?: boolean }) {
   return (
@@ -107,11 +102,7 @@ export function LaunchMint() {
       if (!MINT_CONTRACT) throw new Error("Mint contract not configured.");
 
       setMintStatusMsg("Submitting transaction…");
-      const calldata = [recipientAddress, ...serializeByteArray(GENESIS_NFT_URI)];
-
-      return signer.execute([
-        { contractAddress: MINT_CONTRACT, entrypoint: "mint_item", calldata },
-      ] as Call[]);
+      return signer.execute([genesisMintCall(recipientAddress)]);
     });
   }, [recipientAddress, action]);
 

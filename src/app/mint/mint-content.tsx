@@ -18,12 +18,11 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { MedialaneLogo } from "@/components/brand/medialane-logo";
-import { MINT_NFT_IMAGE_URL } from "@/lib/constants";
 import { GenesisMint } from "@/components/airdrop/genesis-mint";
 
 function EventCard() {
   const [errored, setErrored] = useState(false);
-  const src = MINT_NFT_IMAGE_URL || "/genesis.jpg";
+  const src = "/genesis.jpg";
   return (
     <div className="relative rounded-3xl overflow-hidden border border-border/40 shadow-2xl shadow-black/20 aspect-square w-full">
       {errored ? (
