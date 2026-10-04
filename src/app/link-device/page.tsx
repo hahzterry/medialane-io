@@ -11,6 +11,7 @@ import { createOwnerKey, PasskeyCancelledError, type SealedOwner } from "@/lib/w
 import { saveSealedOwner, notifyWalletChange } from "@/lib/wallet/store";
 import { encodePairingPayload, parseAccountAddress } from "@medialane/sdk/starknet";
 import { isOwnerOf } from "@/lib/wallet/devices";
+import { safeRelativePath } from "@/lib/safe-redirect";
 
 type Step = "start" | "creating" | "share" | "checking";
 
@@ -25,7 +26,7 @@ export default function LinkDevicePage() {
 function LinkDeviceForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirect_url");
+  const redirectTo = safeRelativePath(searchParams.get("redirect_url"));
   const [step, setStep] = useState<Step>("start");
   const [pending, setPending] = useState<SealedOwner | null>(null);
   const [code, setCode] = useState("");

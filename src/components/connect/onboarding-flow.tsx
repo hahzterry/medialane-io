@@ -1,6 +1,6 @@
 "use client";
 
-import { describeError } from "@medialane/ui";
+import { RESEND_COOLDOWN_SECONDS, describeError, describeWalletFailure, detectPasskeySupport, isPasskeyCancelled } from "@medialane/ui";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -19,11 +19,8 @@ import { mediaWallet } from "@/lib/wallet/client";
 import { adoptSessionWallet, claimSessionWallet } from "@medialane/sdk/starknet";
 import { createOwnerKey } from "@/lib/wallet/passkey";
 import { removeDevice } from "@/lib/wallet/devices";
-import { RESEND_COOLDOWN_SECONDS } from "@/lib/email-code";
 import { loadSealedOwner, saveSealedOwner, notifyWalletChange } from "@/lib/wallet/store";
 import { afterCodeVerified, afterEmailCheck, afterRegister } from "@/lib/onboarding/decisions";
-import { describeWalletFailure, isPasskeyCancelled } from "@/lib/onboarding/failures";
-import { detectPasskeySupport } from "@/lib/onboarding/passkey-support";
 import { flowReducer, initialFlow, retryTarget, type OnboardingStep } from "@/lib/onboarding/flow";
 
 export type { OnboardingStep };
@@ -41,7 +38,7 @@ export function walletStepLabel(step: OnboardingStep): string {
   return "Creating passkey…";
 }
 
-export { describeWalletFailure, type WalletFailureNotice } from "@/lib/onboarding/failures";
+export { describeWalletFailure, type WalletFailureNotice } from "@medialane/ui";
 
 export interface OnboardingFlowProps {
   start?: "email" | "wallet";

@@ -5,8 +5,7 @@ import { Loader2, ShieldCheck, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { mediaWallet } from "@/lib/wallet/client";
-import { describeWalletFailure, isPasskeyCancelled } from "@/lib/onboarding/failures";
-import { detectPasskeySupport } from "@/lib/onboarding/passkey-support";
+import { describeWalletFailure, detectPasskeySupport, isPasskeyCancelled } from "@medialane/ui";
 import { type DeploymentStep, type DeploymentResult } from "@medialane/sdk/starknet";
 import {
   Dialog,
