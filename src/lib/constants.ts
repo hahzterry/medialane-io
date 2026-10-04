@@ -7,9 +7,8 @@ export {
   STARKNET_COLLECTION_721_CONTRACT,
   STARKNET_COLLECTION_1155_CONTRACT,
   STARKNET_NFTCOMMENTS_CONTRACT,
-  STARKNET_GENESIS_MINT_LAUNCH_CONTRACT as LAUNCH_MINT_CONTRACT,
-  STARKNET_GENESIS_MINT_BR_CONTRACT as BR_MINT_CONTRACT,
   STARKNET_GENESIS_MINT_GLOBAL_CONTRACT as MINT_CONTRACT,
+  STARKNET_GENESIS_NFT_CID as GENESIS_NFT_CID,
 } from "@medialane/sdk";
 
 
@@ -42,17 +41,8 @@ export const IPFS_GATEWAY = (() => {
 export const EXPLORER_URL =
   readStringEnv(process.env.NEXT_PUBLIC_EXPLORER_URL, "https://voyager.online");
 
-export const GENESIS_NFT_URI =
-  readStringEnv(process.env.NEXT_PUBLIC_GENESIS_NFT_URI);
-
 export const GENESIS_NFT_IMAGE_URL =
   readStringEnv(process.env.NEXT_PUBLIC_GENESIS_NFT_IMAGE_URL);
-
-export const BR_NFT_URI =
-  readStringEnv(process.env.NEXT_PUBLIC_BR_NFT_URI);
-
-export const MINT_NFT_URI =
-  readStringEnv(process.env.NEXT_PUBLIC_MINT_NFT_URI);
 
 export const MINT_NFT_IMAGE_URL =
   readStringEnv(process.env.NEXT_PUBLIC_MINT_NFT_IMAGE_URL);

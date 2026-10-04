@@ -7,7 +7,6 @@ import Image from "next/image";
 import { OnboardingFlow } from "@/components/connect/onboarding-flow";
 import { useWalletNativeSession } from "@/hooks/use-wallet-native-session";
 import { useWalletWriteAction } from "@/hooks/use-wallet-write-action";
-import { pinAssetMetadata } from "@/lib/pin-asset-metadata";
 import { serializeByteArray } from "@/lib/cairo-calldata";
 import {
   Sparkles,
@@ -20,7 +19,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GradientButton } from "@medialane/ui";
-import { EXPLORER_URL, MINT_CONTRACT, MINT_NFT_URI, MINT_NFT_IMAGE_URL } from "@/lib/constants";
+import { EXPLORER_URL, MINT_CONTRACT, GENESIS_NFT_CID, MINT_NFT_IMAGE_URL } from "@/lib/constants";
 import type { Call } from "starknet";
 
 export function AirdropEventCard() {
@@ -79,20 +78,8 @@ export function GenesisMint() {
       if (!walletAddress) throw new UserFacingError("Account not found. Please try again.");
       if (!MINT_CONTRACT) throw new UserFacingError("Airdrop has not started yet.");
 
-      let tokenUri = MINT_NFT_URI.replace(/^ipfs:\/\//, "");
-      if (!tokenUri) {
-        setMintStatusMsg("Registering your participation…");
-        const pinned = await pinAssetMetadata({
-          name: "Medialane Launch Airdrop",
-          description: "Early participant in the Medialane airdrop campaign.",
-          externalUrl: "https://medialane.io/mint",
-          creator: walletAddress,
-        });
-        tokenUri = pinned.uri.replace(/^ipfs:\/\//, "");
-      }
-
       setMintStatusMsg("Confirming participation…");
-      const calldata = [walletAddress, ...serializeByteArray(tokenUri)];
+      const calldata = [walletAddress, ...serializeByteArray(GENESIS_NFT_CID)];
 
       return signer.execute([
         { contractAddress: MINT_CONTRACT, entrypoint: "mint_item", calldata },

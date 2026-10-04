@@ -5,7 +5,6 @@ import { useState, useCallback, useEffect } from "react";
 import Image from "next/image";
 import { useWalletNativeSession } from "@/hooks/use-wallet-native-session";
 import { useWalletWriteAction } from "@/hooks/use-wallet-write-action";
-import { pinAssetMetadata } from "@/lib/pin-asset-metadata";
 import { serializeByteArray } from "@/lib/cairo-calldata";
 import {
   Sparkles,
@@ -23,8 +22,8 @@ import {
 import { Button } from "@/components/ui/button";
 import {
   EXPLORER_URL,
-  LAUNCH_MINT_CONTRACT,
-  GENESIS_NFT_URI,
+  MINT_CONTRACT,
+  GENESIS_NFT_CID,
 } from "@/lib/constants";
 import { LaunchCountdown } from "./launch-countdown";
 import type { Call } from "starknet";
@@ -105,29 +104,13 @@ export function LaunchMint() {
 
     await action.run(async (signer) => {
       requireAccount(recipientAddress);
-      if (!LAUNCH_MINT_CONTRACT) throw new Error("Mint contract not configured.");
-
-      let tokenUri = GENESIS_NFT_URI
-        ? GENESIS_NFT_URI.startsWith("ipfs://") || GENESIS_NFT_URI.startsWith("ar://")
-          ? GENESIS_NFT_URI
-          : `ipfs://${GENESIS_NFT_URI}`
-        : "";
-      if (!tokenUri) {
-        setMintStatusMsg("Uploading NFT metadata…");
-        const pinned = await pinAssetMetadata({
-          name: "Medialane Genesis",
-          description: "Claim your exclusive Genesis NFT.",
-          externalUrl: "https://medialane.io",
-          creator: recipientAddress,
-        });
-        tokenUri = pinned.uri;
-      }
+      if (!MINT_CONTRACT) throw new Error("Mint contract not configured.");
 
       setMintStatusMsg("Submitting transaction…");
-      const calldata = [recipientAddress, ...serializeByteArray(tokenUri)];
+      const calldata = [recipientAddress, ...serializeByteArray(GENESIS_NFT_CID)];
 
       return signer.execute([
-        { contractAddress: LAUNCH_MINT_CONTRACT, entrypoint: "mint_item", calldata },
+        { contractAddress: MINT_CONTRACT, entrypoint: "mint_item", calldata },
       ] as Call[]);
     });
   }, [recipientAddress, action]);
@@ -230,10 +213,10 @@ export function LaunchMint() {
                         size="lg"
                         className="w-full rounded-xl h-12 text-base font-bold gap-2 bg-gradient-to-r from-primary to-purple-500 hover:from-primary/90 hover:to-purple-500/90 shadow-lg shadow-primary/25"
                         onClick={() => void handleMint()}
-                        disabled={!LAUNCH_MINT_CONTRACT}
+                        disabled={!MINT_CONTRACT}
                       >
                         <Sparkles className="h-4 w-4" />
-                        {LAUNCH_MINT_CONTRACT ? "Claim Genesis NFT — Free" : "Mint opening soon"}
+                        {MINT_CONTRACT ? "Claim Genesis NFT — Free" : "Mint opening soon"}
                         <ArrowRight className="h-4 w-4 ml-auto" />
                       </Button>
                       <p className="text-xs text-center text-muted-foreground">

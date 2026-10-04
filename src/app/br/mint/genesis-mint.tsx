@@ -5,7 +5,6 @@ import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { useWalletNativeSession } from "@/hooks/use-wallet-native-session";
 import { useWalletWriteAction } from "@/hooks/use-wallet-write-action";
-import { pinAssetMetadata } from "@/lib/pin-asset-metadata";
 import { serializeByteArray } from "@/lib/cairo-calldata";
 import {
   Sparkles,
@@ -17,7 +16,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { EXPLORER_URL, BR_MINT_CONTRACT, BR_NFT_URI } from "@/lib/constants";
+import { EXPLORER_URL, MINT_CONTRACT, GENESIS_NFT_CID } from "@/lib/constants";
 import type { Call } from "starknet";
 
 type MintStep = "ready" | "minting" | "success" | "error";
@@ -46,29 +45,13 @@ export function GenesisMint() {
 
     await action.run(async (signer) => {
       if (!walletAddress) throw new UserFacingError("Conta não encontrada. Tente novamente.");
-      if (!BR_MINT_CONTRACT) throw new UserFacingError("Distribuição não iniciada ainda.");
-
-      let tokenUri = BR_NFT_URI
-        ? BR_NFT_URI.startsWith("ipfs://") || BR_NFT_URI.startsWith("ar://")
-          ? BR_NFT_URI
-          : `ipfs://${BR_NFT_URI}`
-        : "";
-      if (!tokenUri) {
-        setMintStatusMsg("Registrando participação…");
-        const pinned = await pinAssetMetadata({
-          name: "Lançamento Medialane no Brasil",
-          description: "Registre-se e participe do airdrop de prêmios.",
-          externalUrl: "https://medialane.io/br/mint",
-          creator: walletAddress,
-        });
-        tokenUri = pinned.uri;
-      }
+      if (!MINT_CONTRACT) throw new UserFacingError("Distribuição não iniciada ainda.");
 
       setMintStatusMsg("Confirmando participação…");
-      const calldata = [walletAddress, ...serializeByteArray(tokenUri)];
+      const calldata = [walletAddress, ...serializeByteArray(GENESIS_NFT_CID)];
 
       return signer.execute([
-        { contractAddress: BR_MINT_CONTRACT, entrypoint: "mint_item", calldata },
+        { contractAddress: MINT_CONTRACT, entrypoint: "mint_item", calldata },
       ] as Call[]);
     });
   }, [walletAddress, action]);
@@ -130,10 +113,10 @@ export function GenesisMint() {
               size="lg"
               className="w-full h-12 font-bold gap-2 bg-transparent text-white rounded-[15px] hover:bg-transparent hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50"
               onClick={handleClaim}
-              disabled={!BR_MINT_CONTRACT}
+              disabled={!MINT_CONTRACT}
             >
               <Sparkles className="h-4 w-4" />
-              {BR_MINT_CONTRACT ? "Garantir meu lugar" : "Distribuição não iniciada"}
+              {MINT_CONTRACT ? "Garantir meu lugar" : "Distribuição não iniciada"}
             </Button>
           </div>
         </div>
