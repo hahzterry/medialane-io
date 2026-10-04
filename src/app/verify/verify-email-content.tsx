@@ -1,6 +1,6 @@
 "use client";
 
-import { describeError } from "@medialane/ui";
+import { EmailCodeEntry, describeError } from "@medialane/ui";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Mail, ShieldCheck, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
@@ -10,7 +10,6 @@ import { getMedialaneClient } from "@/lib/medialane-client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { EmailCodeEntry } from "@/components/connect/email-code-entry";
 import { useEmailCode } from "@/hooks/use-email-code";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { saveAccountEmail } from "@/lib/wallet/account-wallet";
